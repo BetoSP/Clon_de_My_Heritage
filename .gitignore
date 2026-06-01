@@ -1,0 +1,11 @@
+# Carpetas excluidas
+Auditorias/
+handoff/
+Prompts de Chat GPT para Claude Code/
+
+# Archivos excluidos
+SESION_RESUMEN.md
+SOURCE_DUMP.md
+
+# Variables de entorno
+arbol/.env

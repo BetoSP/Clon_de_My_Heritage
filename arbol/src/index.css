@@ -1,0 +1,274 @@
+@import "tailwindcss";
+
+/*
+  FUENTE PRINCIPAL — para cambiar la identidad tipográfica,
+  reemplazá la URL y el nombre en --font-body.
+*/
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+/* ── Design tokens ──────────────────────────────────────────────────────── */
+:root {
+
+  /* ── Colores de marca — Galicia Migrante ─────────────────────────────── */
+  --color-primary: #00bcd4;
+  --color-primary-light: #e0f7fa;
+  --color-primary-dark: #0097a7;
+  --color-secondary: #e91e63;
+  --color-secondary-light: #fce4ec;
+  --color-accent-green: #43a047;
+  --color-accent-green-h: #388e3c;
+
+  /* ── Neutrales oscuros (chrome bar) ─────────────────────────────────── */
+  --color-chrome-bg: #1a1a2e;
+  --color-chrome-border: #252540;
+  --color-border-dark: #2d3748;
+  --color-border-darker: #4a5568;
+
+  /* ── Superficies y fondos ────────────────────────────────────────────── */
+  --color-nav-bg: #ffffff;
+  --color-canvas-bg: #f0f4f8;
+  --color-card-bg: #ffffff;
+  --color-card-border: #dde3ec;
+  --color-bg-subtle: #f8fafc;
+  --color-bg-soft: #f0f4f8;
+  --color-bg-hover: #fafbfc;
+
+  /* ── Bordes ──────────────────────────────────────────────────────────── */
+  --color-border-light: #e2e8f0;
+  --color-border-medium: #cbd5e0;
+  --color-border-table: #edf2f7;
+  --color-border-card: #e8edf4;
+  --color-border-row: #f0f4f8;
+
+  /* ── Texto UI ────────────────────────────────────────────────────────── */
+  --color-text-primary: #1a202c;
+  --color-text-secondary: #4a5568;
+  --color-text-muted: #718096;
+  --color-text-placeholder: #a0aec0;
+  --color-text-inverse: #ffffff;
+
+  /* ── Danger / Error ──────────────────────────────────────────────────── */
+  --color-danger: #dc2626;
+  --color-danger-light: #fee2e2;
+  --color-danger-border: #fca5a5;
+  --color-danger-dark: #b91c1c;
+  --color-danger-hover: #ef4444;
+
+  /* ── Foco / Selección UI ─────────────────────────────────────────────── */
+  --color-focus-ring: #00bcd426;
+  --color-primary-glow: #00bcd480;
+  --color-primary-shadow: #00bcd459;
+  --color-focus-node: #6d28d9;
+  --color-focus-node-bg: #f5f3ff;
+  --color-focus-node-light: #ede9fe;
+  --color-selection: #7c3aed;
+  --color-selection-bg: #7c3aed1a;
+
+  /* ── Ghost overlay ───────────────────────────────────────────────────── */
+  --ghost-overlay-color: #303030;
+  --ghost-overlay-opacity: 0.82;
+
+  /* ══════════════════════════════════════════════════════════════════════
+     NODOS DEL ÁRBOL — colores y estilos visuales
+     Modificar aquí para cambiar la apariencia de los nodos sin tocar código
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* ── Líneas del árbol ────────────────────────────────────────────────── */
+  --edge-color-parent: #00bcd4;
+  /* líneas padre→hijo */
+  --edge-color-spouse: #e91e63;
+  /* líneas de cónyuge */
+  --edge-color-dissolved: #e91e6388;
+  /* líneas de cónyuge disueltas */
+  --edge-color-ghost: #94a3b8;
+  /* líneas de nodos fantasma */
+
+  /* ── Nodo persona — masculino ────────────────────────────────────────── */
+  --node-male-bg: #f0fdff;
+  --node-male-border: #b2ebf2;
+  --node-male-accent: #00bcd4;
+  /* barra lateral izquierda */
+
+  /* ── Nodo persona — femenino ─────────────────────────────────────────── */
+  --node-female-bg: #fff0f6;
+  --node-female-border: #fce4ec;
+  --node-female-accent: #e91e63;
+
+  /* ── Nodo persona — foco ─────────────────────────────────────────────── */
+  --node-focus-bg: #f5f3ff;
+  --node-focus-border: #6d28d9;
+  --node-focus-accent: #6d28d9;
+
+  /* ── Nodo persona — activo (modo fantasma) ───────────────────────────── */
+  --node-active-bg: #ffffff;
+  --node-active-border-male: #00bcd4;
+  --node-active-border-female: #e91e63;
+  --node-active-stroke-w: 2.5;
+  /* grosor borde nodo activo */
+
+  /* ── Nodo persona — seleccionado ─────────────────────────────────────── */
+  --node-selection-bg: #7c3aed1a;
+  --node-selection-border: #7c3aed;
+
+  /* ── Nodo persona — texto ────────────────────────────────────────────── */
+  --node-text-name: #1e293b;
+  --node-text-date: #64748b;
+  --node-font-name: 10.5px;
+  --node-font-date: 9.5px;
+
+  /* ── Nodo persona — sombra ───────────────────────────────────────────── */
+  --node-shadow-color: #0000000f;
+  --node-shadow-dx: 2px;
+  --node-shadow-dy: 3px;
+
+  /* ── Nodo persona — barra lateral ────────────────────────────────────── */
+  --node-accent-w: 4;
+  /* strokeWidth de la barra lateral */
+  --node-radius: 8;
+  /* rx de las esquinas del nodo */
+
+  /* ── Botones dentro del nodo ─────────────────────────────────────────── */
+  --node-btn-edit-r: 9;
+  /* radio botón editar ✏️ */
+  --node-btn-add-r: 10;
+  /* radio botón agregar + */
+  --node-btn-font: 10px;
+  /* fontSize botón editar */
+  --node-btn-add-font: 15px;
+  /* fontSize botón agregar */
+
+  /* ── Ícono de persona dentro del nodo ───────────────────────────────── */
+  --avatar-bg: #e5e7eb;
+  --avatar-fill: #9ca3af;
+
+  /* ── Nodo fantasma ───────────────────────────────────────────────────── */
+  --ghost-node-bg: #ffffff;
+  --ghost-node-shadow: #00000020;
+  --ghost-node-radius: 10;
+  --ghost-node-text: #1e293b;
+  --ghost-node-font: 11.5px;
+  --ghost-avatar-bg: #e5e7eb;
+  --ghost-avatar-fill: #9ca3af;
+
+  /* ── Union node ──────────────────────────────────────────────────────── */
+  --union-dot-color: #00bcd4;
+
+  /* ── Selección del nodo (padding alrededor) ──────────────────────────── */
+  --node-selection-pad: 6;
+  /* px de padding alrededor del nodo seleccionado */
+  --node-selection-radius: 14;
+  /* rx de la selección */
+
+  /* ══════════════════════════════════════════════════════════════════════ */
+
+  /* ── Tipografía UI ───────────────────────────────────────────────────── */
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "SFMono-Regular", monospace;
+
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-base: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 15px;
+  --font-size-xl: 16px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  --line-height-tight: 1.15;
+  --line-height-base: 1.5;
+
+  /* ── Espaciado ───────────────────────────────────────────────────────── */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+
+  /* ── Bordes redondeados UI ───────────────────────────────────────────── */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-full: 50%;
+
+  /* ── Íconos ──────────────────────────────────────────────────────────── */
+  --icon-sm: 14px;
+  --icon-md: 15px;
+  --icon-nav: 16px;
+
+  /* ── Componentes UI ──────────────────────────────────────────────────── */
+  --height-chrome: 36px;
+  --height-nav: 48px;
+  --height-icon-btn: 24px;
+  --height-btn: 28px;
+  --height-nav-btn: 30px;
+  --width-search: 190px;
+  --width-gen-slider: 110px;
+  --width-avatar-chrome: 22px;
+  --width-logo-icon: 28px;
+  --width-dissolve-input: 70px;
+  --nav-logo-min-width: 180px;
+  --gen-value-min-width: 26px;
+  --modal-max-width: 480px;
+  --canvas-min-height: 400px;
+  --canvas-empty-max-width: 260px;
+
+  /* ── Sombras ─────────────────────────────────────────────────────────── */
+  --shadow-card: 0 2px 8px #0000001a, 0 1px 2px #0000000f;
+  --shadow-panel: 0 1px 3px #00000014;
+  --shadow-modal: 0 20px 60px #00000040;
+  --shadow-canvas: inset 0 2px 8px #0000000f, 0 1px 3px #0000000a;
+  --shadow-btn-primary: 0 4px 12px var(--color-primary-shadow);
+  --shadow-glow-slider: 0 1px 4px var(--color-primary-glow);
+
+  /* ── Transiciones ────────────────────────────────────────────────────── */
+  --transition-fast: 150ms ease;
+  --transition-base: 220ms ease;
+}
+
+/* ── Reset & base ───────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  font-family: var(--font-body);
+  background: var(--color-canvas-bg);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c8d8;
+  border-radius: var(--radius-xs);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9aa5b8;
+}
