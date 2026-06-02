@@ -64,7 +64,7 @@ export const UNION_DOT_R = 4;
 
 // ── Layout del árbol ──────────────────────────────────────────────────────
 export const H_SPACING = 200;
-export const V_SPACING = 160;
+export const V_SPACING = 200;
 export const CANVAS_PADDING = 120;
 
 // ── Líneas del árbol ──────────────────────────────────────────────────────

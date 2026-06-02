@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useState, useCallback } from "react";
 import { layoutFamilyGraph } from "../graph/layoutFamilyGraph.js";
 import {
   PERSON_W, PERSON_H,
@@ -20,6 +20,10 @@ import {
   GHOST_LINE_W, GHOST_LINE_OPACITY,
   elbowPath, ghostLinePath, getSlotOffset,
 } from "../graph/geometry.js";
+
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 2;
+const ZOOM_STEP = 0.001;
 
 function edgePath(src, tgt) {
   const isSrcUnion = src.type === "union";
@@ -74,30 +78,12 @@ function GhostNode({ x, y, label, isFemale, onClick }) {
   const borderColor = isFemale ? "var(--edge-color-spouse)" : "var(--edge-color-parent)";
   return (
     <g onClick={onClick} style={{ cursor: "pointer" }}>
-      <rect
-        x={x + GHOST_SHADOW_DX} y={y + GHOST_SHADOW_DY}
-        width={GHOST_W} height={GHOST_H}
-        rx={GHOST_RADIUS}
-        fill="var(--ghost-node-shadow)"
-      />
-      <rect
-        x={x} y={y}
-        width={GHOST_W} height={GHOST_H}
-        rx={GHOST_RADIUS}
-        fill="var(--ghost-node-bg)"
-        stroke={borderColor}
-        strokeWidth={GHOST_STROKE_W}
-      />
+      <rect x={x + GHOST_SHADOW_DX} y={y + GHOST_SHADOW_DY} width={GHOST_W} height={GHOST_H} rx={GHOST_RADIUS} fill="var(--ghost-node-shadow)" />
+      <rect x={x} y={y} width={GHOST_W} height={GHOST_H} rx={GHOST_RADIUS} fill="var(--ghost-node-bg)" stroke={borderColor} strokeWidth={GHOST_STROKE_W} />
       <circle cx={x + GHOST_AVATAR_CX} cy={y + GHOST_H / 2} r={17} fill="var(--ghost-avatar-bg)" />
       <circle cx={x + GHOST_AVATAR_CX} cy={y + GHOST_H / 2 - 6} r={6.5} fill="var(--ghost-avatar-fill)" />
       <ellipse cx={x + GHOST_AVATAR_CX} cy={y + GHOST_H / 2 + 9} rx={11} ry={7.5} fill="var(--ghost-avatar-fill)" />
-      <text
-        x={x + GHOST_TEXT_X} y={y + GHOST_H / 2 + 5}
-        fontSize="var(--ghost-node-font)"
-        fill="var(--ghost-node-text)"
-        fontWeight="600"
-        fontFamily="system-ui, sans-serif"
-      >
+      <text x={x + GHOST_TEXT_X} y={y + GHOST_H / 2 + 5} fontSize="var(--ghost-node-font)" fill="var(--ghost-node-text)" fontWeight="600" fontFamily="system-ui, sans-serif">
         {label}
       </text>
     </g>
@@ -108,20 +94,9 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, hasE
   const { x, y } = node;
   const isMale = node.data.gender === "male";
 
-  const accentColor = isFocus
-    ? "var(--node-focus-accent)"
-    : isMale ? "var(--node-male-accent)" : "var(--node-female-accent)";
-
-  const bgColor = isGhostActive
-    ? "var(--node-active-bg)"
-    : isFocus ? "var(--node-focus-bg)"
-      : isMale ? "var(--node-male-bg)" : "var(--node-female-bg)";
-
-  const borderColor = isGhostActive
-    ? (isMale ? "var(--node-active-border-male)" : "var(--node-active-border-female)")
-    : isFocus ? "var(--node-focus-border)"
-      : isMale ? "var(--node-male-border)" : "var(--node-female-border)";
-
+  const accentColor = isFocus ? "var(--node-focus-accent)" : isMale ? "var(--node-male-accent)" : "var(--node-female-accent)";
+  const bgColor = isGhostActive ? "var(--node-active-bg)" : isFocus ? "var(--node-focus-bg)" : isMale ? "var(--node-male-bg)" : "var(--node-female-bg)";
+  const borderColor = isGhostActive ? (isMale ? "var(--node-active-border-male)" : "var(--node-active-border-female)") : isFocus ? "var(--node-focus-border)" : isMale ? "var(--node-male-border)" : "var(--node-female-border)";
   const sw = isGhostActive ? 2.5 : isFocus ? 2.5 : 1.5;
 
   const name = (() => {
@@ -131,7 +106,6 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, hasE
 
   const dates = node.data.birth_year ? String(node.data.birth_year) : "?";
 
-  // Posiciones desde geometry.js
   const badgeCX = x + NODE_BADGE_DX;
   const badgeCY = y + NODE_BADGE_DY;
   const linkCX = x + NODE_ICON_LINK_DX;
@@ -141,133 +115,41 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, hasE
 
   return (
     <g style={{ cursor: "pointer" }} onClick={() => onSelect(node.id)}>
-
       {isSelected && !isGhostActive && (
-        <rect
-          x={x - NODE_SELECTION_PAD} y={y - NODE_SELECTION_PAD}
-          width={PERSON_W + NODE_SELECTION_PAD * 2} height={PERSON_H + NODE_SELECTION_PAD * 2}
-          rx={NODE_SELECTION_RADIUS}
-          fill="var(--node-selection-bg)"
-          stroke="var(--node-selection-border)"
-          strokeWidth={1}
-          strokeDasharray="4,2"
-        />
+        <rect x={x - NODE_SELECTION_PAD} y={y - NODE_SELECTION_PAD} width={PERSON_W + NODE_SELECTION_PAD * 2} height={PERSON_H + NODE_SELECTION_PAD * 2} rx={NODE_SELECTION_RADIUS} fill="var(--node-selection-bg)" stroke="var(--node-selection-border)" strokeWidth={1} strokeDasharray="4,2" />
       )}
-
-      {/* Sombra */}
-      <rect
-        x={x + NODE_SHADOW_DX} y={y + NODE_SHADOW_DY}
-        width={PERSON_W} height={PERSON_H}
-        rx={NODE_RADIUS}
-        fill="var(--node-shadow-color)"
-      />
-      {/* Nodo */}
-      <rect
-        x={x} y={y}
-        width={PERSON_W} height={PERSON_H}
-        rx={NODE_RADIUS}
-        fill={bgColor}
-        stroke={borderColor}
-        strokeWidth={sw}
-      />
-      {/* Barra acento */}
-      <line
-        x1={x + NODE_ACCENT_X} y1={y + NODE_ACCENT_TOP}
-        x2={x + NODE_ACCENT_X} y2={y + PERSON_H - NODE_ACCENT_TOP}
-        stroke={accentColor}
-        strokeWidth={NODE_ACCENT_W}
-        strokeLinecap="round"
-      />
+      <rect x={x + NODE_SHADOW_DX} y={y + NODE_SHADOW_DY} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill="var(--node-shadow-color)" />
+      <rect x={x} y={y} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill={bgColor} stroke={borderColor} strokeWidth={sw} />
+      <line x1={x + NODE_ACCENT_X} y1={y + NODE_ACCENT_TOP} x2={x + NODE_ACCENT_X} y2={y + PERSON_H - NODE_ACCENT_TOP} stroke={accentColor} strokeWidth={NODE_ACCENT_W} strokeLinecap="round" />
       <PersonAvatar cx={x + AVATAR_CX} cy={y + AVATAR_CY} r={AVATAR_R} />
+      <text x={x + TEXT_X} y={y + 22} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" fontFamily="system-ui, sans-serif">{name}</text>
+      <text x={x + TEXT_X} y={y + 38} fontSize="var(--node-font-date)" fill="var(--node-text-date)">{dates}</text>
 
-      {/* Nombre */}
-      <text
-        x={x + TEXT_X} y={y + 22}
-        fontSize="var(--node-font-name)"
-        fontWeight="700"
-        fill="var(--node-text-name)"
-        fontFamily="system-ui, sans-serif"
-      >
-        {name}
-      </text>
-      {/* Fecha */}
-      <text
-        x={x + TEXT_X} y={y + 38}
-        fontSize="var(--node-font-date)"
-        fill="var(--node-text-date)"
-      >
-        {dates}
-      </text>
-
-      {/* Badge xN — esquina sup izq, mitad afuera */}
       {unionCount > 1 && (
         <g>
           <circle cx={badgeCX} cy={badgeCY} r={NODE_BADGE_R} fill="var(--icon-badge-bg)" />
-          <text
-            x={badgeCX} y={badgeCY + 4}
-            textAnchor="middle"
-            fontSize={NODE_BADGE_FONT}
-            fontWeight="bold"
-            fill="var(--icon-badge-text)"
-            fontFamily="system-ui, sans-serif"
-          >
-            x{unionCount}
-          </text>
+          <text x={badgeCX} y={badgeCY + 4} textAnchor="middle" fontSize={NODE_BADGE_FONT} fontWeight="bold" fill="var(--icon-badge-text)" fontFamily="system-ui, sans-serif">x{unionCount}</text>
         </g>
       )}
 
-      {/* Simbolito link — fuera del nodo, esquina sup der */}
       {!isGhostActive && hasExternalTree && (
-        <g
-          onClick={(e) => { e.stopPropagation(); onFocusPerson(node.id); }}
-          style={{ cursor: "pointer" }}
-        >
+        <g onClick={(e) => { e.stopPropagation(); onFocusPerson(node.id); }} style={{ cursor: "pointer" }}>
           <circle cx={linkCX} cy={linkCY} r={NODE_ICON_LINK_R} fill="var(--icon-link-bg)" stroke={accentColor} strokeWidth={1.5} />
-          <use
-            href="/icons.svg#icon-link-tree"
-            x={linkCX - NODE_ICON_SIZE / 2} y={linkCY - NODE_ICON_SIZE / 2}
-            width={NODE_ICON_SIZE} height={NODE_ICON_SIZE}
-            stroke={accentColor}
-            color={accentColor}
-          />
+          <use href="/icons.svg#icon-link-tree" x={linkCX - NODE_ICON_SIZE / 2} y={linkCY - NODE_ICON_SIZE / 2} width={NODE_ICON_SIZE} height={NODE_ICON_SIZE} stroke={accentColor} color={accentColor} />
         </g>
       )}
 
-      {/* Lápiz — dentro del nodo, esquina inf der */}
       {!isGhostActive && (
-        <g
-          onClick={(e) => { e.stopPropagation(); onEditPerson(node.id); }}
-          style={{ cursor: "pointer" }}
-        >
+        <g onClick={(e) => { e.stopPropagation(); onEditPerson(node.id); }} style={{ cursor: "pointer" }}>
           <circle cx={editCX} cy={editCY} r={NODE_ICON_EDIT_R} fill="var(--icon-edit-bg)" stroke={accentColor} strokeWidth={1} opacity={0.9} />
-          <use
-            href="/icons.svg#icon-edit"
-            x={editCX - NODE_ICON_SIZE / 2} y={editCY - NODE_ICON_SIZE / 2}
-            width={NODE_ICON_SIZE} height={NODE_ICON_SIZE}
-            stroke={accentColor}
-            color={accentColor}
-          />
+          <use href="/icons.svg#icon-edit" x={editCX - NODE_ICON_SIZE / 2} y={editCY - NODE_ICON_SIZE / 2} width={NODE_ICON_SIZE} height={NODE_ICON_SIZE} stroke={accentColor} color={accentColor} />
         </g>
       )}
 
-      {/* Botón + abajo centro */}
       <g onClick={(e) => { e.stopPropagation(); onAddRelative(node.id); }} style={{ cursor: "pointer" }}>
-        <circle
-          cx={x + PERSON_W / 2}
-          cy={y + PERSON_H + NODE_BTN_ADD_CY}
-          r={NODE_BTN_ADD_R}
-          fill="white" stroke={accentColor} strokeWidth={1.5} opacity={0.85}
-        />
-        <use
-          href="/icons.svg#icon-add"
-          x={x + PERSON_W / 2 - NODE_ICON_SIZE / 2}
-          y={y + PERSON_H + NODE_BTN_ADD_CY - NODE_ICON_SIZE / 2}
-          width={NODE_ICON_SIZE} height={NODE_ICON_SIZE}
-          stroke={accentColor}
-          color={accentColor}
-        />
+        <circle cx={x + PERSON_W / 2} cy={y + PERSON_H + NODE_BTN_ADD_CY} r={NODE_BTN_ADD_R} fill="white" stroke={accentColor} strokeWidth={1.5} opacity={0.85} />
+        <use href="/icons.svg#icon-add" x={x + PERSON_W / 2 - NODE_ICON_SIZE / 2} y={y + PERSON_H + NODE_BTN_ADD_CY - NODE_ICON_SIZE / 2} width={NODE_ICON_SIZE} height={NODE_ICON_SIZE} stroke={accentColor} color={accentColor} />
       </g>
-
     </g>
   );
 }
@@ -279,24 +161,15 @@ function DissolveCell({ edge, dissolvingRelId, dissolveYear, setDissolvingRelId,
   if (isDissolving) {
     return (
       <span className="dissolve-wrap">
-        <input type="number" value={dissolveYear}
-          onChange={(e) => setDissolveYear(e.target.value)}
-          placeholder="Año" className="dissolve-year-input" />
-        <button onClick={() => {
-          if (!dissolveYear) return;
-          onDissolveSpouse?.(relId, Number(dissolveYear));
-          setDissolvingRelId(null); setDissolveYear("");
-        }} className="btn-dissolve-confirm">✓</button>
-        <button onClick={() => { setDissolvingRelId(null); setDissolveYear(""); }}
-          className="btn-dissolve-cancel">✕</button>
+        <input type="number" value={dissolveYear} onChange={(e) => setDissolveYear(e.target.value)} placeholder="Año" className="dissolve-year-input" />
+        <button onClick={() => { if (!dissolveYear) return; onDissolveSpouse?.(relId, Number(dissolveYear)); setDissolvingRelId(null); setDissolveYear(""); }} className="btn-dissolve-confirm">✓</button>
+        <button onClick={() => { setDissolvingRelId(null); setDissolveYear(""); }} className="btn-dissolve-cancel">✕</button>
       </span>
     );
   }
 
   return (
-    <button onClick={() => setDissolvingRelId(relId)} className="btn-dissolve-trigger">
-      activo · disolver
-    </button>
+    <button onClick={() => setDissolvingRelId(relId)} className="btn-dissolve-trigger">activo · disolver</button>
   );
 }
 
@@ -313,28 +186,87 @@ export default function GraphView({
   searchQuery = "",
 }) {
   const layout = useMemo(() => layoutFamilyGraph(graph), [graph]);
-  const nodeMap = useMemo(
-    () => new Map(layout.nodes.map((n) => [n.id, n])),
-    [layout.nodes]
-  );
+  const nodeMap = useMemo(() => new Map(layout.nodes.map((n) => [n.id, n])), [layout.nodes]);
 
   const [dissolvingRelId, setDissolvingRelId] = useState(null);
   const [dissolveYear, setDissolveYear] = useState("");
   const [activeGhostNodeId, setActiveGhostNodeId] = useState(null);
 
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const panStart = useRef(null);
+  const panOrigin = useRef({ x: 0, y: 0 });
   const wrapperRef = useRef(null);
+  const didPan = useRef(false);
+
+  const canvasW = layout.nodes.length
+    ? Math.max(...layout.nodes.map((n) => n.x + (n.type === "union" ? UNION_R * 2 : PERSON_W))) + CANVAS_PADDING * 2 + GHOST_W + CANVAS_PADDING
+    : 400;
+
+  const canvasH = layout.nodes.length
+    ? Math.max(...layout.nodes.map((n) => n.y + (n.type === "union" ? UNION_R * 2 : PERSON_H))) + CANVAS_PADDING * 2 + GHOST_H + CANVAS_PADDING
+    : 200;
 
   useEffect(() => {
-    if (!activeGhostNodeId || !wrapperRef.current) return;
-    const node = nodeMap.get(activeGhostNodeId);
-    if (!node) return;
+    if (!wrapperRef.current || layout.nodes.length === 0) return;
     const wrapper = wrapperRef.current;
-    wrapper.scrollTo({
-      left: node.x + PERSON_W / 2 + CANVAS_PADDING - wrapper.clientWidth / 2,
-      top: node.y + PERSON_H / 2 + CANVAS_PADDING - wrapper.clientHeight / 2,
-      behavior: "smooth",
+    const wW = wrapper.clientWidth;
+    const wH = wrapper.clientHeight;
+    const centerX = (wW - canvasW * zoom) / 2;
+    const centerY = (wH - canvasH * zoom) / 2;
+    setPan({ x: centerX, y: centerY });
+  }, [layout.nodes.length, canvasW, canvasH]);
+
+  const handleMouseDown = useCallback((e) => {
+    if (e.button !== 0) return;
+    if (activeGhostNodeId) return;
+    setIsPanning(true);
+    didPan.current = false;
+    panStart.current = { x: e.clientX, y: e.clientY };
+    panOrigin.current = { ...pan };
+    e.preventDefault();
+  }, [pan, activeGhostNodeId]);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isPanning || !panStart.current) return;
+    const dx = e.clientX - panStart.current.x;
+    const dy = e.clientY - panStart.current.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didPan.current = true;
+    setPan({ x: panOrigin.current.x + dx, y: panOrigin.current.y + dy });
+  }, [isPanning]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+    panStart.current = null;
+  }, []);
+
+  const handleWheel = useCallback((e) => {
+    e.preventDefault();
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const rect = wrapper.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    setZoom((prevZoom) => {
+      const delta = -e.deltaY * ZOOM_STEP;
+      const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prevZoom + delta * prevZoom));
+      const scale = newZoom / prevZoom;
+      setPan((prevPan) => ({
+        x: mouseX - scale * (mouseX - prevPan.x),
+        y: mouseY - scale * (mouseY - prevPan.y),
+      }));
+      return newZoom;
     });
-  }, [activeGhostNodeId, nodeMap]);
+  }, []);
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    wrapper.addEventListener("wheel", handleWheel, { passive: false });
+    return () => wrapper.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
 
   function spouseRelId(edgeId) {
     return parseInt(edgeId.split("-")[1], 10);
@@ -347,13 +279,6 @@ export default function GraphView({
     return name.includes(searchQuery.toLowerCase()) ? 1 : 0.18;
   }
 
-  function labelOf(id) {
-    const n = nodeMap.get(id);
-    if (!n) return id;
-    if (n.type === "person") return n.data.name ?? id;
-    return `Unión ${n.data.person_a_id}–${n.data.person_b_id}`;
-  }
-
   function handleAddRelative(nodeId) {
     setActiveGhostNodeId((prev) => prev === nodeId ? null : nodeId);
   }
@@ -361,6 +286,10 @@ export default function GraphView({
   function handleGhostClick(nodeId, slotType) {
     setActiveGhostNodeId(null);
     onAddRelative?.(nodeId, slotType);
+  }
+
+  function handleCanvasClick() {
+    if (didPan.current) { didPan.current = false; return; }
   }
 
   const personUnionCount = useMemo(() => {
@@ -384,208 +313,140 @@ export default function GraphView({
     return result;
   }, [layout.edges]);
 
-  const canvasW = layout.nodes.length
-    ? Math.max(...layout.nodes.map((n) => n.x + (n.type === "union" ? UNION_R * 2 : PERSON_W)))
-    + CANVAS_PADDING * 2 + GHOST_W + CANVAS_PADDING
-    : 400;
-
-  const canvasH = layout.nodes.length
-    ? Math.max(...layout.nodes.map((n) => n.y + (n.type === "union" ? UNION_R * 2 : PERSON_H)))
-    + CANVAS_PADDING * 2 + GHOST_H + CANVAS_PADDING
-    : 200;
-
   const activeNode = activeGhostNodeId ? nodeMap.get(activeGhostNodeId) : null;
   const ghostSlots = activeNode ? getVacantSlots(activeGhostNodeId, layout.edges, layout.nodes) : [];
+  const cursor = activeGhostNodeId ? "default" : isPanning ? "grabbing" : "grab";
 
   return (
     <div className="graph-col">
-      <div className="canvas-wrapper canvas-wrapper--relative" ref={wrapperRef}>
-
+      <div
+        className="canvas-wrapper canvas-wrapper--relative"
+        ref={wrapperRef}
+        style={{ overflow: "hidden", cursor }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onClick={handleCanvasClick}
+      >
         {layout.nodes.length === 0 ? (
           <div className="canvas-empty">
             <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth={1.5} className="canvas-empty__icon">
               <circle cx={24} cy={16} r={8} />
               <path d="M8 40c0-8.837 7.163-16 16-16s16 7.163 16 16" />
             </svg>
-            <p className="canvas-empty__text">
-              Sin datos. Usá "Agregar persona" para comenzar.
-            </p>
+            <p className="canvas-empty__text">Sin datos. Usá "Agregar persona" para comenzar.</p>
           </div>
         ) : (
           <>
-            <svg width={canvasW} height={canvasH} style={{ display: "block" }} overflow="visible">
-              <defs>
-                <pattern id="grid" width={40} height={40} patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" strokeWidth={0.5} />
-                </pattern>
-              </defs>
-              <rect width={canvasW} height={canvasH} fill="url(#grid)" />
+            <div style={{
+              position: "absolute",
+              top: 0, left: 0,
+              transformOrigin: "0 0",
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              willChange: "transform",
+            }}>
+              <svg width={canvasW} height={canvasH} style={{ display: "block" }} overflow="visible">
+                <defs>
+                  <pattern id="grid" width={40} height={40} patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" strokeWidth={0.5} />
+                  </pattern>
+                </defs>
+                <rect width={canvasW} height={canvasH} fill="url(#grid)" />
 
-              <g transform={`translate(${CANVAS_PADDING}, ${CANVAS_PADDING})`}>
-
-                {layout.edges.map((edge) => {
-                  const src = nodeMap.get(edge.source);
-                  const tgt = nodeMap.get(edge.target);
-                  if (!src || !tgt) return null;
-                  const d = edgePath(src, tgt);
-                  const isSpouse = edge.type === "spouse";
-                  const dissolved = edge.until_year !== null;
-                  return (
-                    <path key={edge.id} d={d} fill="none"
-                      stroke={isSpouse
-                        ? (dissolved ? "var(--edge-color-dissolved)" : "var(--edge-color-spouse)")
-                        : "var(--edge-color-parent)"}
-                      strokeWidth={isSpouse ? EDGE_STROKE_SPOUSE : EDGE_STROKE_PARENT}
-                      strokeDasharray={isSpouse && dissolved ? "5,3" : undefined}
-                      strokeLinecap="round" strokeLinejoin="round"
-                      strokeOpacity={activeGhostNodeId ? 0.08 : 0.8}
-                    />
-                  );
-                })}
-
-                {layout.nodes.filter((n) => n.type === "person").map((node) => (
-                  <g key={node.id} opacity={nodeOpacity(node)}>
-                    <PersonNode
-                      node={node}
-                      isSelected={selectedNodeId === node.id}
-                      isFocus={focusNodeId === node.id}
-                      isGhostActive={activeGhostNodeId === node.id}
-                      unionCount={personUnionCount.get(node.id) ?? 0}
-                      hasExternalTree={!personHasAncestors.has(node.id) && (personUnionCount.get(node.id) ?? 0) > 0}
-                      onSelect={onSelectNode ?? (() => { })}
-                      onAddRelative={handleAddRelative}
-                      onEditPerson={onEditPerson ?? (() => { })}
-                      onFocusPerson={onFocusPerson ?? (() => { })}
-                    />
-                  </g>
-                ))}
-
-                {layout.nodes.filter((n) => n.type === "union").map((node) => (
-                  <g key={node.id} opacity={activeGhostNodeId ? 0.08 : 1}>
-                    {UNION_DOT_R > 0 && (
-                      <circle
-                        cx={node.x + UNION_R}
-                        cy={node.y + UNION_R}
-                        r={UNION_DOT_R}
-                        fill="var(--union-dot-color)"
-                      />
-                    )}
-                  </g>
-                ))}
-
-              </g>
-            </svg>
-
-            {activeGhostNodeId && (
-              <div className="ghost-overlay" onClick={() => setActiveGhostNodeId(null)} />
-            )}
-
-            {activeGhostNodeId && activeNode && (
-              <svg
-                width={canvasW}
-                height={canvasH}
-                style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 15 }}
-                overflow="visible"
-              >
                 <g transform={`translate(${CANVAS_PADDING}, ${CANVAS_PADDING})`}>
-
-                  <g pointerEvents="none">
-                    <PersonNode
-                      node={activeNode}
-                      isSelected={false}
-                      isFocus={false}
-                      isGhostActive={true}
-                      unionCount={0}
-                      hasExternalTree={false}
-                      onSelect={() => { }}
-                      onAddRelative={() => { }}
-                      onEditPerson={() => { }}
-                      onFocusPerson={() => { }}
-                    />
-                  </g>
-
-                  {ghostSlots.map((slot) => {
-                    const { dx, dy } = getSlotOffset(slot.position);
-                    const gx = activeNode.x + dx;
-                    const gy = activeNode.y + dy;
-                    const d = ghostLinePath(activeNode, gx, gy, slot.position);
-                    const isFemale = slot.type === "mother" || slot.type === "daughter" || slot.type === "sister";
-
+                  {layout.edges.map((edge) => {
+                    const src = nodeMap.get(edge.source);
+                    const tgt = nodeMap.get(edge.target);
+                    if (!src || !tgt) return null;
+                    const d = edgePath(src, tgt);
+                    const isSpouse = edge.type === "spouse";
+                    const dissolved = edge.until_year !== null;
                     return (
-                      <g key={slot.type} style={{ pointerEvents: "all" }}>
-                        <path
-                          d={d} fill="none"
-                          stroke="var(--edge-color-ghost)"
-                          strokeWidth={GHOST_LINE_W}
-                          strokeOpacity={GHOST_LINE_OPACITY}
-                          strokeLinecap="round"
-                        />
-                        <GhostNode
-                          x={gx} y={gy}
-                          label={slot.label}
-                          isFemale={isFemale}
-                          onClick={(e) => { e.stopPropagation(); handleGhostClick(activeGhostNodeId, slot.type); }}
-                        />
-                      </g>
+                      <path key={edge.id} d={d} fill="none"
+                        stroke={isSpouse ? (dissolved ? "var(--edge-color-dissolved)" : "var(--edge-color-spouse)") : "var(--edge-color-parent)"}
+                        strokeWidth={isSpouse ? EDGE_STROKE_SPOUSE : EDGE_STROKE_PARENT}
+                        strokeDasharray={isSpouse && dissolved ? "5,3" : undefined}
+                        strokeLinecap="round" strokeLinejoin="round"
+                        strokeOpacity={activeGhostNodeId ? 0.08 : 0.8}
+                      />
                     );
                   })}
 
+                  {layout.nodes.filter((n) => n.type === "person").map((node) => (
+                    <g key={node.id} opacity={nodeOpacity(node)}>
+                      <PersonNode
+                        node={node}
+                        isSelected={selectedNodeId === node.id}
+                        isFocus={focusNodeId === node.id}
+                        isGhostActive={activeGhostNodeId === node.id}
+                        unionCount={personUnionCount.get(node.id) ?? 0}
+                        hasExternalTree={!personHasAncestors.has(node.id) && (personUnionCount.get(node.id) ?? 0) > 0}
+                        onSelect={onSelectNode ?? (() => { })}
+                        onAddRelative={handleAddRelative}
+                        onEditPerson={onEditPerson ?? (() => { })}
+                        onFocusPerson={onFocusPerson ?? (() => { })}
+                      />
+                    </g>
+                  ))}
+
+                  {layout.nodes.filter((n) => n.type === "union").map((node) => (
+                    <g key={node.id} opacity={activeGhostNodeId ? 0.08 : 1}>
+                      {UNION_DOT_R > 0 && (
+                        <circle cx={node.x + UNION_R} cy={node.y + UNION_R} r={UNION_DOT_R} fill="var(--union-dot-color)" />
+                      )}
+                    </g>
+                  ))}
                 </g>
               </svg>
-            )}
+
+              {activeGhostNodeId && (
+                <div className="ghost-overlay" onClick={() => setActiveGhostNodeId(null)} style={{ position: "absolute", inset: 0 }} />
+              )}
+
+              {activeGhostNodeId && activeNode && (
+                <svg width={canvasW} height={canvasH} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 15 }} overflow="visible">
+                  <g transform={`translate(${CANVAS_PADDING}, ${CANVAS_PADDING})`}>
+                    <g pointerEvents="none">
+                      <PersonNode
+                        node={activeNode}
+                        isSelected={false}
+                        isFocus={false}
+                        isGhostActive={true}
+                        unionCount={0}
+                        hasExternalTree={false}
+                        onSelect={() => { }}
+                        onAddRelative={() => { }}
+                        onEditPerson={() => { }}
+                        onFocusPerson={() => { }}
+                      />
+                    </g>
+                    {ghostSlots.map((slot) => {
+                      const { dx, dy } = getSlotOffset(slot.position);
+                      const gx = activeNode.x + dx;
+                      const gy = activeNode.y + dy;
+                      const d = ghostLinePath(activeNode, gx, gy, slot.position);
+                      const isFemale = slot.type === "mother" || slot.type === "daughter" || slot.type === "sister";
+                      return (
+                        <g key={slot.type} style={{ pointerEvents: "all" }}>
+                          <path d={d} fill="none" stroke="var(--edge-color-ghost)" strokeWidth={GHOST_LINE_W} strokeOpacity={GHOST_LINE_OPACITY} strokeLinecap="round" />
+                          <GhostNode x={gx} y={gy} label={slot.label} isFemale={isFemale} onClick={(e) => { e.stopPropagation(); handleGhostClick(activeGhostNodeId, slot.type); }} />
+                        </g>
+                      );
+                    })}
+                  </g>
+                </svg>
+              )}
+            </div>
 
             {activeGhostNodeId && (
-              <button className="ghost-close-btn" onClick={() => setActiveGhostNodeId(null)}>
+              <button className="ghost-close-btn" onClick={() => setActiveGhostNodeId(null)} style={{ zIndex: 20 }}>
                 Cerrar ✕
               </button>
             )}
           </>
         )}
       </div>
-
-      <details className="rels-details">
-        <summary><span>▶</span> Relaciones ({graph.edges.length})</summary>
-        <div className="rels-table-wrap">
-          {graph.edges.length === 0 ? (
-            <p className="rels-empty-msg">Sin relaciones registradas.</p>
-          ) : (
-            <table className="rels-table">
-              <thead>
-                <tr><th>Origen</th><th>Tipo</th><th>Destino</th><th>Desde</th><th>Hasta</th></tr>
-              </thead>
-              <tbody>
-                {graph.edges.map((edge) => (
-                  <tr key={edge.id}>
-                    <td className="rels-td-name">{labelOf(edge.source)}</td>
-                    <td>
-                      <span className={`rel-type-badge${edge.type === "spouse" ? " rel-type-badge--spouse" : ""}`}>
-                        {edge.type}
-                      </span>
-                    </td>
-                    <td className="rels-td-name">{labelOf(edge.target)}</td>
-                    <td className="rels-td-muted">{edge.since_year ?? "—"}</td>
-                    <td className="rels-td-muted">
-                      {edge.type === "spouse" && edge.until_year === null && edge.id.endsWith("-a") ? (
-                        <DissolveCell
-                          edge={edge}
-                          dissolvingRelId={dissolvingRelId}
-                          dissolveYear={dissolveYear}
-                          setDissolvingRelId={setDissolvingRelId}
-                          setDissolveYear={setDissolveYear}
-                          onDissolveSpouse={onDissolveSpouse}
-                          spouseRelId={spouseRelId}
-                        />
-                      ) : (
-                        edge.until_year ?? "activo"
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </details>
     </div>
   );
 }

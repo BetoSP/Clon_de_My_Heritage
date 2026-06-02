@@ -3,24 +3,11 @@
 // Input:  graph = { nodes, edges }  (output of buildFamilyGraph)
 // Output: { nodes: [...node, x, y], edges }
 //
-// Coordinate system:
-//   x, y = top-left corner of the node bounding box
-//   Person node bounding box: PERSON_W × PERSON_H
-//   Union node bounding box:  (2*UNION_R) × (2*UNION_R)
-//
-// Layout rules:
-//   - Generation 0 = roots (persons with no recorded parents)
-//   - Each generation sits on y = gen * V_SPACING
-//   - Union nodes are vertically centered with person nodes at the same generation
-//   - Union nodes are centered horizontally between their two spouses
-//   - Children are centered under their parents (union node or single parent)
-//   - Minimum H_SPACING is enforced between siblings to prevent overlap
-//   - Spouses are always placed at the same generation (leveled to the higher one)
-//   - Spouses without ancestors are placed beside their partner, respecting occupied space
-//   - Output is 100% deterministic: same input → same output
+// Algoritmo: dos pasadas
+//   Pasada 1 (bottom-up): calcula el ancho del subárbol de cada grupo
+//   Pasada 2 (top-down):  asigna posiciones X reales
 //
 // ⚠️  Todas las constantes dimensionales viven en geometry.js.
-//     No definir valores visuales en este archivo.
 
 import { PARENT_EDGE_TYPES } from "./relationshipTypes.js";
 import {
@@ -34,15 +21,14 @@ import {
 export function layoutFamilyGraph(graph) {
   const { nodes, edges } = graph;
 
-  if (nodes.length === 0) {
-    return { nodes: [], edges };
-  }
+  if (nodes.length === 0) return { nodes: [], edges };
 
-  // ── 1. Build adjacency maps ───────────────────────────────────────────────
+  // ── 1. Mapas de adyacencia ────────────────────────────────────────────────
 
-  const parentsOf = new Map(nodes.map((n) => [n.id, []]));
-  const unionPersons = new Map(); // unionId → [personId, ...]
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
+  const parentsOf = new Map(nodes.map((n) => [n.id, []]));
+  const unionPersons = new Map();
+  const personUnions = new Map();
 
   for (const edge of edges) {
     if (PARENT_EDGE_TYPES.has(edge.type)) {
@@ -51,6 +37,8 @@ export function layoutFamilyGraph(graph) {
     if (edge.type === "spouse") {
       if (!unionPersons.has(edge.target)) unionPersons.set(edge.target, []);
       unionPersons.get(edge.target).push(edge.source);
+      if (!personUnions.has(edge.source)) personUnions.set(edge.source, []);
+      personUnions.get(edge.source).push(edge.target);
     }
   }
 
@@ -64,82 +52,6 @@ export function layoutFamilyGraph(graph) {
     return result;
   }
 
-  // ── 2. Compute person generations ────────────────────────────────────────
-
-  const gen = new Map();
-
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const node of nodes) {
-      if (node.type !== "person" || gen.has(node.id)) continue;
-      const ancestors = ancestorPersonIds(node.id);
-      if (ancestors.length === 0) {
-        gen.set(node.id, 0);
-        changed = true;
-      } else if (ancestors.every((id) => gen.has(id))) {
-        gen.set(node.id, Math.max(...ancestors.map((id) => gen.get(id))) + 1);
-        changed = true;
-      }
-    }
-  }
-  for (const node of nodes) {
-    if (node.type === "person" && !gen.has(node.id)) gen.set(node.id, 0);
-  }
-  for (const node of nodes) {
-    if (node.type !== "union") continue;
-    const spouseIds = unionPersons.get(node.id) ?? [];
-    gen.set(
-      node.id,
-      spouseIds.length ? Math.max(...spouseIds.map((id) => gen.get(id) ?? 0)) : 0
-    );
-  }
-
-  // ── 2b. Nivelar generaciones de cónyuges ─────────────────────────────────
-  // Si dos cónyuges están en generaciones distintas, se igualan a la mayor.
-  // Se repite hasta convergencia por si hay cadenas de cónyuges.
-
-  let leveled = true;
-  while (leveled) {
-    leveled = false;
-    for (const node of nodes) {
-      if (node.type !== "union") continue;
-      const spouseIds = unionPersons.get(node.id) ?? [];
-      if (spouseIds.length < 2) continue;
-      const gens = spouseIds.map((id) => gen.get(id) ?? 0);
-      const maxGen = Math.max(...gens);
-      for (const id of spouseIds) {
-        if ((gen.get(id) ?? 0) < maxGen) {
-          gen.set(id, maxGen);
-          leveled = true;
-        }
-      }
-    }
-    // Recalcular union nodes tras cada pasada
-    for (const node of nodes) {
-      if (node.type !== "union") continue;
-      const spouseIds = unionPersons.get(node.id) ?? [];
-      gen.set(
-        node.id,
-        spouseIds.length ? Math.max(...spouseIds.map((id) => gen.get(id) ?? 0)) : 0
-      );
-    }
-  }
-
-  // ── 3. Assign x positions to person nodes, generation by generation ───────
-
-  const xPos = new Map();
-  const maxGenV = Math.max(...gen.values(), 0);
-
-  // Mapeo: personId → [unionId, ...] para encontrar cónyuges
-  const personUnions = new Map();
-  for (const [unionId, spouseIds] of unionPersons) {
-    for (const sid of spouseIds) {
-      if (!personUnions.has(sid)) personUnions.set(sid, []);
-      personUnions.get(sid).push(unionId);
-    }
-  }
-
   function getSpouseIds(personId) {
     const result = [];
     for (const unionId of personUnions.get(personId) ?? []) {
@@ -150,65 +62,241 @@ export function layoutFamilyGraph(graph) {
     return result;
   }
 
-  for (let g = 0; g <= maxGenV; g++) {
-    const persons = nodes
-      .filter((n) => n.type === "person" && gen.get(n.id) === g);
-
-    if (persons.length === 0) continue;
-
-    // Separar en: tienen ancestros vs sin ancestros
-    const withAncestors = persons.filter((p) => ancestorPersonIds(p.id).length > 0);
-    const withoutAncestors = persons.filter((p) => ancestorPersonIds(p.id).length === 0);
-
-    // Ordenar con-ancestros por posición de sus ancestros
-    withAncestors.sort((a, b) => {
-      const avgAncestorX = (p) => {
-        const xs = ancestorPersonIds(p.id).map(
-          (id) => (xPos.get(id) ?? 0) + PERSON_W / 2
-        );
-        return xs.length ? xs.reduce((s, v) => s + v, 0) / xs.length : 0;
-      };
-      const diff = avgAncestorX(a) - avgAncestorX(b);
-      return diff !== 0 ? diff : Number(a.id) - Number(b.id);
-    });
-
-    // Asignar X a los que tienen ancestros
-    const idealXs = withAncestors.map((p) => {
-      const xs = ancestorPersonIds(p.id).map(
-        (id) => (xPos.get(id) ?? 0) + PERSON_W / 2
-      );
-      return xs.reduce((s, v) => s + v, 0) / xs.length - PERSON_W / 2;
-    });
-
-    const finalXs = [...idealXs];
-    for (let i = 1; i < finalXs.length; i++) {
-      finalXs[i] = Math.max(finalXs[i], finalXs[i - 1] + H_SPACING);
+  function getUnionSinceYear(personId, spouseId) {
+    for (const unionId of personUnions.get(personId) ?? []) {
+      const members = unionPersons.get(unionId) ?? [];
+      if (members.includes(spouseId)) {
+        const edge = edges.find((e) => e.type === "spouse" && e.target === unionId);
+        return edge?.since_year ?? null;
+      }
     }
-    withAncestors.forEach((node, i) => xPos.set(node.id, finalXs[i]));
+    return null;
+  }
 
-    // Colocar los sin ancestros respetando el espacio ocupado en la generación
-    for (const node of withoutAncestors) {
-      const occupiedXs = persons
-        .filter((n) => n.id !== node.id && xPos.has(n.id))
-        .map((n) => xPos.get(n.id));
-      const minSafeX = occupiedXs.length > 0 ? Math.max(...occupiedXs) + H_SPACING : 0;
+  function getChildren(personId) {
+    const result = new Set();
+    for (const e of edges) {
+      if (e.type === "child_of") {
+        const unionMembers = unionPersons.get(e.source) ?? [];
+        if (unionMembers.includes(personId)) result.add(e.target);
+      }
+      if (PARENT_EDGE_TYPES.has(e.type) && e.source === personId) {
+        result.add(e.target);
+      }
+    }
+    return [...result];
+  }
 
-      const spouseIds = getSpouseIds(node.id);
-      const positionedSpouse = spouseIds.find((id) => xPos.has(id));
-      const desiredX = positionedSpouse !== undefined
-        ? xPos.get(positionedSpouse) + H_SPACING
-        : minSafeX;
+  // ── 2. Generaciones ───────────────────────────────────────────────────────
 
-      xPos.set(node.id, Math.max(desiredX, minSafeX));
+  const gen = new Map();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const node of nodes) {
+      if (node.type !== "person" || gen.has(node.id)) continue;
+      const ancestors = ancestorPersonIds(node.id);
+      if (ancestors.length === 0) {
+        gen.set(node.id, 0); changed = true;
+      } else if (ancestors.every((id) => gen.has(id))) {
+        gen.set(node.id, Math.max(...ancestors.map((id) => gen.get(id))) + 1);
+        changed = true;
+      }
+    }
+  }
+  for (const node of nodes) {
+    if (node.type === "person" && !gen.has(node.id)) gen.set(node.id, 0);
+  }
+
+  // Nivelar cónyuges
+  let leveled = true;
+  while (leveled) {
+    leveled = false;
+    for (const node of nodes) {
+      if (node.type !== "union") continue;
+      const spouseIds = unionPersons.get(node.id) ?? [];
+      if (spouseIds.length < 2) continue;
+      const maxGen = Math.max(...spouseIds.map((id) => gen.get(id) ?? 0));
+      for (const id of spouseIds) {
+        if ((gen.get(id) ?? 0) < maxGen) { gen.set(id, maxGen); leveled = true; }
+      }
+    }
+  }
+  for (const node of nodes) {
+    if (node.type !== "union") continue;
+    const spouseIds = unionPersons.get(node.id) ?? [];
+    gen.set(node.id, spouseIds.length
+      ? Math.max(...spouseIds.map((id) => gen.get(id) ?? 0))
+      : 0);
+  }
+
+  const maxGenV = Math.max(...gen.values(), 0);
+
+  // ── 3. Construir grupos ───────────────────────────────────────────────────
+  // Un grupo = persona principal + sus cónyuges
+  // La persona principal es la de menor ID dentro de cada pareja
+  // (para raíces sin ancestros)
+
+  const isSecondaryInGroup = new Set(); // personas que van a la derecha de su pareja
+
+  // Para cada union node, determinar quién es principal y quién es secundario
+  for (const [unionId, spouseIds] of unionPersons) {
+    if (spouseIds.length < 2) continue;
+    // Ordenar por: primero quien tiene ancestros, luego por ID menor
+    const sorted = [...spouseIds].sort((a, b) => {
+      const aHasAncestors = ancestorPersonIds(a).length > 0;
+      const bHasAncestors = ancestorPersonIds(b).length > 0;
+      if (aHasAncestors && !bHasAncestors) return -1;
+      if (!aHasAncestors && bHasAncestors) return 1;
+      return Number(a) - Number(b);
+    });
+    // El primero es principal, el resto son secundarios
+    for (let i = 1; i < sorted.length; i++) {
+      isSecondaryInGroup.add(sorted[i]);
     }
   }
 
+  // ── 4. Calcular ancho de subárbol (bottom-up) ─────────────────────────────
+
+  const subtreeWidth = new Map();
+
+  function getGroupSpouses(personId) {
+    // Cónyuges que son secundarios de esta persona
+    return getSpouseIds(personId)
+      .filter((sid) => isSecondaryInGroup.has(sid))
+      .sort((a, b) => {
+        const ya = getUnionSinceYear(personId, a) ?? null;
+        const yb = getUnionSinceYear(personId, b) ?? null;
+        if (ya !== null && yb !== null) return ya - yb;
+        if (ya !== null) return -1;
+        if (yb !== null) return 1;
+        return Number(a) - Number(b);
+      });
+  }
+
+  function getSortedChildren(personId) {
+    const myGen = gen.get(personId) ?? 0;
+    return getChildren(personId)
+      .filter((cid) => !isSecondaryInGroup.has(cid) && (gen.get(cid) ?? 0) === myGen + 1)
+      .sort((a, b) => {
+        const ya = nodeById.get(a)?.data?.birth_year ?? null;
+        const yb = nodeById.get(b)?.data?.birth_year ?? null;
+        if (ya !== null && yb !== null) return ya - yb;
+        if (ya !== null) return -1;
+        if (yb !== null) return 1;
+        return Number(a) - Number(b);
+      });
+  }
+
+  function calcSubtreeWidth(personId) {
+    if (subtreeWidth.has(personId)) return subtreeWidth.get(personId);
+    if (isSecondaryInGroup.has(personId)) return 0;
+
+    const groupSpouses = getGroupSpouses(personId);
+    const groupW = (1 + groupSpouses.length) * H_SPACING;
+    const children = getSortedChildren(personId);
+
+    if (children.length === 0) {
+      subtreeWidth.set(personId, groupW);
+      return groupW;
+    }
+
+    let childrenTotalW = 0;
+    for (const cid of children) {
+      childrenTotalW += calcSubtreeWidth(cid);
+    }
+
+    const w = Math.max(groupW, childrenTotalW);
+    subtreeWidth.set(personId, w);
+    return w;
+  }
+
+  // Raíces
+  const roots = nodes.filter(
+    (n) => n.type === "person" &&
+      ancestorPersonIds(n.id).length === 0 &&
+      !isSecondaryInGroup.has(n.id)
+  ).sort((a, b) => {
+    const ya = nodeById.get(a.id)?.data?.birth_year ?? null;
+    const yb = nodeById.get(b.id)?.data?.birth_year ?? null;
+    if (ya !== null && yb !== null) return ya - yb;
+    if (ya !== null) return -1;
+    if (yb !== null) return 1;
+    return Number(a.id) - Number(b.id);
+  });
+
+  for (const root of roots) calcSubtreeWidth(root.id);
+
+  // ── 5. Asignar posiciones X (top-down) ───────────────────────────────────
+
+  const xPos = new Map();
+
+  function placeSubtree(personId, startX) {
+    if (isSecondaryInGroup.has(personId)) return startX;
+    if (xPos.has(personId)) return startX;
+
+    const groupSpouses = getGroupSpouses(personId);
+    const children = getSortedChildren(personId);
+    const groupW = (1 + groupSpouses.length) * H_SPACING;
+
+    if (children.length === 0) {
+      // Nodo hoja
+      xPos.set(personId, startX);
+      groupSpouses.forEach((sid, i) => xPos.set(sid, startX + (i + 1) * H_SPACING));
+      return startX + groupW;
+    }
+
+    // Posicionar hijos primero
+    let childX = startX;
+    for (const cid of children) {
+      childX = placeSubtree(cid, childX);
+    }
+
+    // Calcular el span de los hijos
+    const firstChild = children[0];
+    const lastChild = children[children.length - 1];
+
+    // Centro izquierdo: centro del primer hijo (incluyendo sus cónyuges)
+    const firstChildSpouses = getGroupSpouses(firstChild);
+    const firstChildLeft = xPos.get(firstChild) ?? startX;
+    const firstChildRight = firstChildLeft + (1 + firstChildSpouses.length) * H_SPACING - H_SPACING + PERSON_W;
+    const firstChildCenter = (firstChildLeft + PERSON_W / 2);
+
+    // Centro derecho: centro del último hijo (incluyendo sus cónyuges)
+    const lastChildSpouses = getGroupSpouses(lastChild);
+    const lastChildLeft = xPos.get(lastChild) ?? startX;
+    const lastChildRightmost = lastChildSpouses.length > 0
+      ? (xPos.get(lastChildSpouses[lastChildSpouses.length - 1]) ?? lastChildLeft) + PERSON_W / 2
+      : lastChildLeft + PERSON_W / 2;
+
+    const childrenSpanCenter = (firstChildCenter + lastChildRightmost) / 2;
+
+    // Centrar el grupo sobre los hijos usando el union node como centro
+    // El union node queda entre persona y primer cónyuge
+    // Centro del grupo = persona + PERSON_W/2 + (groupSpouses.length * H_SPACING / 2)
+    const groupCenterOffset = (groupSpouses.length * H_SPACING) / 2;
+    const personX = childrenSpanCenter - PERSON_W / 2 - groupCenterOffset;
+
+    const safePersonX = Math.max(personX, startX);
+
+    xPos.set(personId, safePersonX);
+    groupSpouses.forEach((sid, i) => xPos.set(sid, safePersonX + (i + 1) * H_SPACING));
+
+    return Math.max(childX, safePersonX + groupW);
+  }
+
+  let currentX = 0;
+  for (const root of roots) {
+    currentX = placeSubtree(root.id, currentX);
+  }
+
+  // Normalizar
   const minX = Math.min(...xPos.values(), 0);
   if (minX < 0) {
     for (const [id, x] of xPos) xPos.set(id, x - minX);
   }
 
-  // ── 4. Place union nodes centered between their spouses ──────────────────
+  // ── 6. Union nodes centrados entre sus cónyuges ───────────────────────────
 
   for (const node of nodes) {
     if (node.type !== "union") continue;
@@ -220,7 +308,7 @@ export function layoutFamilyGraph(graph) {
     xPos.set(node.id, unionCenterX - UNION_R);
   }
 
-  // ── 5. Build final layout ─────────────────────────────────────────────────
+  // ── 7. Build final layout ─────────────────────────────────────────────────
 
   const layoutNodes = nodes.map((node) => {
     const g = gen.get(node.id) ?? 0;
