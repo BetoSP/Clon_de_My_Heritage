@@ -1,3 +1,4 @@
+// App.jsx
 import { useEffect, useMemo, useState, useCallback } from "react";
 import GraphView from "./components/GraphView";
 import TopNavBar from "./components/TopNavBar";
@@ -14,23 +15,17 @@ import "./App.css";
 
 export default function App() {
 
-  // ── Data state ───────────────────────────────────────────────────────────
   const [people, setPeople] = useState([]);
   const [relationships, setRelationships] = useState([]);
-
-  // ── UI state ─────────────────────────────────────────────────────────────
   const [focusPersonId, setFocusPersonId] = useState(null);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [generationsCount, setGenerationsCount] = useState(5);
   const [viewMode, setViewMode] = useState("familia");
-
-  // ── Modal state ──────────────────────────────────────────────────────────
   const [modalPersona, setModalPersona] = useState(null);
   const [modalRelacion, setModalRelacion] = useState(null);
   const [modalAddRelative, setModalAddRelative] = useState(null);
 
-  // ── Data loading ─────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     try {
       if (focusPersonId) {
@@ -40,9 +35,7 @@ export default function App() {
             generations_up: generationsCount,
             generations_down: generationsCount,
           });
-
         if (error) throw error;
-
         const ids = subgraphData.map((r) => r.person_id);
         const [peopleData, relsData] = await Promise.all([
           fetchPeopleByIds(ids),
@@ -65,42 +58,66 @@ export default function App() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // ── Graph ────────────────────────────────────────────────────────────────
   const graph = useMemo(
     () => buildFamilyGraph(people, relationships),
     [people, relationships]
   );
 
-  // ── Apellidos sugeridos ───────────────────────────────────────────────────
   function getSuggestedSurnames(fromPersonId) {
     const fromPerson = people.find((p) => String(p.id) === String(fromPersonId));
     if (!fromPerson) return { surname1: "", surname2: "" };
-
     const spouseRel = relationships.find(
       (r) => r.type === "spouse" && (
         String(r.person_a_id) === String(fromPersonId) ||
         String(r.person_b_id) === String(fromPersonId)
       )
     );
-
     const spouseId = spouseRel
       ? String(spouseRel.person_a_id) === String(fromPersonId)
         ? String(spouseRel.person_b_id)
         : String(spouseRel.person_a_id)
       : null;
-
     const spouse = spouseId ? people.find((p) => String(p.id) === spouseId) : null;
-
     const fatherPerson = fromPerson.gender === "male" ? fromPerson : spouse;
     const motherPerson = fromPerson.gender === "female" ? fromPerson : spouse;
-
     return {
       surname1: fatherPerson?.surname_1 ?? "",
       surname2: motherPerson?.surname_1 ?? "",
     };
   }
 
-  // ── Handlers — PersonModal ────────────────────────────────────────────────
+  // ── Calcular progenitor sugerido por defecto ──────────────────────────────
+  function getDefaultParentSuggestion(fromPersonId, slotType) {
+    if (slotType !== "father" && slotType !== "mother") return null;
+
+    // Si agregamos madre → buscamos si ya tiene padre → proponemos pareja del padre
+    // Si agregamos padre → buscamos si ya tiene madre → proponemos pareja de la madre
+    const existingParentType = slotType === "mother" ? "father" : "mother";
+
+    const existingParentRel = relationships.find(
+      (r) => r.type === existingParentType && String(r.person_b_id) === String(fromPersonId)
+    );
+    if (!existingParentRel) return null;
+
+    const existingParent = people.find((p) => String(p.id) === String(existingParentRel.person_a_id));
+    if (!existingParent) return null;
+
+    // Buscar pareja del progenitor existente
+    const spouseRel = relationships.find(
+      (r) => r.type === "spouse" && (
+        String(r.person_a_id) === String(existingParent.id) ||
+        String(r.person_b_id) === String(existingParent.id)
+      )
+    );
+    if (!spouseRel) return null;
+
+    const spouseId = String(spouseRel.person_a_id) === String(existingParent.id)
+      ? spouseRel.person_b_id
+      : spouseRel.person_a_id;
+
+    return people.find((p) => String(p.id) === String(spouseId)) ?? null;
+  }
+
   async function handleSavePersona(personData) {
     try {
       if (personData.id) await updatePerson(personData);
@@ -118,9 +135,7 @@ export default function App() {
         (r) => String(r.person_a_id) === String(id) ||
           String(r.person_b_id) === String(id)
       );
-      for (const rel of personRels) {
-        await deleteRelationship(rel.id);
-      }
+      for (const rel of personRels) await deleteRelationship(rel.id);
       await deletePerson(id);
       setModalPersona(null);
       loadData();
@@ -129,7 +144,15 @@ export default function App() {
     }
   }
 
-  // ── Handlers — RelationshipModal ──────────────────────────────────────────
+  async function handleAddRelationshipFromModal(relData) {
+    try {
+      await addRelationship(relData);
+      loadData();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   async function handleSaveRelacion(relData) {
     try {
       if (relData.id) await updateRelationship(relData);
@@ -151,8 +174,7 @@ export default function App() {
     }
   }
 
-  // ── Handlers — AddRelativeModal ───────────────────────────────────────────
-  async function handleSaveAddRelative({ person, relationship }) {
+  async function handleSaveAddRelative({ person, relationship, existingPersonId }) {
     try {
       const { fromPersonId, slotType } = modalAddRelative;
 
@@ -194,6 +216,18 @@ export default function App() {
         }
       }
 
+      // Si eligió una persona existente (padre/madre)
+      if (existingPersonId) {
+        await addRelationship({
+          person_a_id: Number(existingPersonId),
+          person_b_id: Number(fromPersonId),
+          type: slotType,
+        });
+        setModalAddRelative(null);
+        loadData();
+        return;
+      }
+
       const newPerson = await addPerson(person);
       if (!newPerson) throw new Error("No se pudo crear la persona");
 
@@ -212,7 +246,6 @@ export default function App() {
           person_b_id: newPerson.id,
           type: relType,
         });
-
         if (relationship?.otherParentId) {
           const otherParent = people.find((p) => String(p.id) === String(relationship.otherParentId));
           const otherType = otherParent?.gender === "female" ? "mother" : "father";
@@ -222,7 +255,6 @@ export default function App() {
             type: otherType,
           });
         }
-
         if (relationship?.otherParentNew) {
           const newOther = await addPerson(relationship.otherParentNew);
           if (newOther) {
@@ -269,7 +301,6 @@ export default function App() {
     }
   }
 
-  // ── Handlers — grafo ──────────────────────────────────────────────────────
   async function handleDissolveSpouse(relId, untilYear) {
     try {
       await dissolveRelationship(relId, untilYear);
@@ -301,13 +332,11 @@ export default function App() {
     setFocusPersonId(null);
   }
 
-  // ── Derived values ────────────────────────────────────────────────────────
   const focusPerson = people.find((p) => String(p.id) === String(focusPersonId));
   const focusPersonName = focusPerson
     ? `${focusPerson.name} ${focusPerson.surnames ?? ""}`.trim()
     : null;
   const personCount = graph.nodes.filter((n) => n.type === "person").length;
-
   const modalPersonaObj = modalPersona === "new" ? null : modalPersona?.person ?? null;
 
   const addRelativeFromPerson = modalAddRelative
@@ -336,6 +365,21 @@ export default function App() {
       }).filter(Boolean);
     })()
     : [];
+
+  // Candidatos para padre/madre (personas existentes filtradas por género)
+  const addRelativeParentCandidates = modalAddRelative &&
+    (modalAddRelative.slotType === "father" || modalAddRelative.slotType === "mother")
+    ? people.filter((p) => {
+      if (String(p.id) === String(modalAddRelative.fromPersonId)) return false;
+      if (modalAddRelative.slotType === "father") return p.gender === "male" || p.gender === "unknown";
+      if (modalAddRelative.slotType === "mother") return p.gender === "female" || p.gender === "unknown";
+      return true;
+    })
+    : [];
+
+  const addRelativeDefaultParent = modalAddRelative
+    ? getDefaultParentSuggestion(modalAddRelative.fromPersonId, modalAddRelative.slotType)
+    : null;
 
   return (
     <div className="app-shell">
@@ -383,8 +427,11 @@ export default function App() {
       {modalPersona !== null && (
         <PersonModal
           person={modalPersonaObj}
+          people={people}
+          relationships={relationships}
           onSave={handleSavePersona}
           onDelete={handleDeletePersona}
+          onAddRelationship={handleAddRelationshipFromModal}
           onClose={() => setModalPersona(null)}
         />
       )}
@@ -404,6 +451,8 @@ export default function App() {
           slotType={modalAddRelative.slotType}
           fromPerson={addRelativeFromPerson}
           otherParentOptions={addRelativeOtherParentOptions}
+          parentCandidates={addRelativeParentCandidates}
+          defaultParent={addRelativeDefaultParent}
           suggestedSurname1={addRelativeSuggested.surname1}
           suggestedSurname2={addRelativeSuggested.surname2}
           onSave={handleSaveAddRelative}

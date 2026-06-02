@@ -39,7 +39,7 @@ function DateFields({ label, precision, onPrecision, day, onDay, month, onMonth,
     );
 }
 
-export default function PersonModal({ person, onSave, onDelete, onClose }) {
+export default function PersonModal({ person, people = [], relationships = [], onSave, onDelete, onAddRelationship, onClose }) {
     const isEditing = person !== null && person !== undefined;
 
     const [gender, setGender] = useState(isEditing ? (person.gender ?? "male") : "male");
@@ -68,6 +68,24 @@ export default function PersonModal({ person, onSave, onDelete, onClose }) {
 
     const [adopted, setAdopted] = useState(isEditing ? (person.adopted ?? false) : false);
     const [confirmDelete, setConfirmDelete] = useState(false);
+
+    // ── Progenitores faltantes ────────────────────────────────────────────
+    const [newFatherId, setNewFatherId] = useState("");
+    const [newMotherId, setNewMotherId] = useState("");
+
+    const hasFather = isEditing && relationships.some(
+        (r) => r.type === "father" && String(r.person_b_id) === String(person.id)
+    );
+    const hasMother = isEditing && relationships.some(
+        (r) => r.type === "mother" && String(r.person_b_id) === String(person.id)
+    );
+
+    const candidateFathers = people.filter(
+        (p) => String(p.id) !== String(person?.id) && p.gender !== "female"
+    );
+    const candidateMothers = people.filter(
+        (p) => String(p.id) !== String(person?.id) && p.gender !== "male"
+    );
 
     function handleSave() {
         if (!nombre.trim()) return;
@@ -102,6 +120,26 @@ export default function PersonModal({ person, onSave, onDelete, onClose }) {
     function handleDelete() {
         if (!confirmDelete) { setConfirmDelete(true); return; }
         onDelete(person.id);
+    }
+
+    function handleAddFather() {
+        if (!newFatherId) return;
+        onAddRelationship({
+            person_a_id: Number(newFatherId),
+            person_b_id: Number(person.id),
+            type: "father",
+        });
+        setNewFatherId("");
+    }
+
+    function handleAddMother() {
+        if (!newMotherId) return;
+        onAddRelationship({
+            person_a_id: Number(newMotherId),
+            person_b_id: Number(person.id),
+            type: "mother",
+        });
+        setNewMotherId("");
     }
 
     return (
@@ -236,6 +274,71 @@ export default function PersonModal({ person, onSave, onDelete, onClose }) {
                         Esta persona fue adoptada
                     </label>
                 </div>
+
+                {/* ── Progenitores faltantes (solo en modo edición) ─────── */}
+                {isEditing && (!hasFather || !hasMother) && (
+                    <div style={{ borderTop: "1px solid var(--color-border-light)", paddingTop: 12 }}>
+                        <label className="modal-label" style={{ marginBottom: 8, display: "block" }}>
+                            Progenitores faltantes
+                        </label>
+
+                        {!hasFather && (
+                            <div className="modal-field-row" style={{ alignItems: "flex-end" }}>
+                                <div className="modal-field">
+                                    <label className="modal-label">Padre</label>
+                                    <select
+                                        className="form-select"
+                                        value={newFatherId}
+                                        onChange={(e) => setNewFatherId(e.target.value)}
+                                    >
+                                        <option value="">Seleccionar padre...</option>
+                                        {candidateFathers.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name} {p.surnames ?? ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <button
+                                    className="btn-primary"
+                                    onClick={handleAddFather}
+                                    disabled={!newFatherId}
+                                    style={{ flexShrink: 0 }}
+                                >
+                                    Agregar
+                                </button>
+                            </div>
+                        )}
+
+                        {!hasMother && (
+                            <div className="modal-field-row" style={{ alignItems: "flex-end", marginTop: 8 }}>
+                                <div className="modal-field">
+                                    <label className="modal-label">Madre</label>
+                                    <select
+                                        className="form-select"
+                                        value={newMotherId}
+                                        onChange={(e) => setNewMotherId(e.target.value)}
+                                    >
+                                        <option value="">Seleccionar madre...</option>
+                                        {candidateMothers.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name} {p.surnames ?? ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <button
+                                    className="btn-primary"
+                                    onClick={handleAddMother}
+                                    disabled={!newMotherId}
+                                    style={{ flexShrink: 0 }}
+                                >
+                                    Agregar
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Botones */}
                 <div className="modal-actions">

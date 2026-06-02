@@ -6,9 +6,11 @@ import {
   NODE_RADIUS, NODE_ACCENT_X, NODE_ACCENT_TOP, NODE_ACCENT_W,
   NODE_SHADOW_DX, NODE_SHADOW_DY,
   NODE_SELECTION_PAD, NODE_SELECTION_RADIUS,
-  NODE_BTN_EDIT_R, NODE_BTN_EDIT_CY,
   NODE_BTN_ADD_R, NODE_BTN_ADD_CY,
   NODE_NAME_MAX_CHARS,
+  NODE_ICON_SIZE, NODE_ICON_EDIT_R, NODE_ICON_LINK_R, NODE_BADGE_R, NODE_BADGE_FONT,
+  NODE_ICON_EDIT_CX, NODE_ICON_EDIT_CY, NODE_ICON_LINK_DX, NODE_ICON_LINK_DY,
+  NODE_BADGE_DX, NODE_BADGE_DY,
   UNION_R, UNION_DOT_R,
   CANVAS_PADDING,
   EDGE_STROKE_PARENT, EDGE_STROKE_SPOUSE,
@@ -19,7 +21,6 @@ import {
   elbowPath, ghostLinePath, getSlotOffset,
 } from "../graph/geometry.js";
 
-// ── Edge path para el árbol real ──────────────────────────────────────────
 function edgePath(src, tgt) {
   const isSrcUnion = src.type === "union";
   const isTgtUnion = tgt.type === "union";
@@ -34,7 +35,6 @@ function edgePath(src, tgt) {
   return elbowPath(srcCX, srcBotY, tgtCX, tgtTopY);
 }
 
-// ── Ícono de persona ──────────────────────────────────────────────────────
 function PersonAvatar({ cx, cy, r }) {
   return (
     <g>
@@ -45,7 +45,6 @@ function PersonAvatar({ cx, cy, r }) {
   );
 }
 
-// ── Slots vacantes ────────────────────────────────────────────────────────
 function getVacantSlots(nodeId, edges, nodes) {
   const hasFather = edges.some((e) => e.target === nodeId && e.type === "father");
   const hasMother = edges.some((e) => e.target === nodeId && e.type === "mother");
@@ -71,7 +70,6 @@ function getVacantSlots(nodeId, edges, nodes) {
   return slots;
 }
 
-// ── Nodo fantasma ─────────────────────────────────────────────────────────
 function GhostNode({ x, y, label, isFemale, onClick }) {
   const borderColor = isFemale ? "var(--edge-color-spouse)" : "var(--edge-color-parent)";
   return (
@@ -106,8 +104,7 @@ function GhostNode({ x, y, label, isFemale, onClick }) {
   );
 }
 
-// ── Nodo persona ──────────────────────────────────────────────────────────
-function PersonNode({ node, isSelected, isFocus, isGhostActive, onSelect, onAddRelative, onEditPerson }) {
+function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, hasExternalTree, onSelect, onAddRelative, onEditPerson, onFocusPerson }) {
   const { x, y } = node;
   const isMale = node.data.gender === "male";
 
@@ -134,6 +131,14 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, onSelect, onAddR
 
   const dates = node.data.birth_year ? String(node.data.birth_year) : "?";
 
+  // Posiciones desde geometry.js
+  const badgeCX = x + NODE_BADGE_DX;
+  const badgeCY = y + NODE_BADGE_DY;
+  const linkCX = x + NODE_ICON_LINK_DX;
+  const linkCY = y + NODE_ICON_LINK_DY;
+  const editCX = x + NODE_ICON_EDIT_CX;
+  const editCY = y + NODE_ICON_EDIT_CY;
+
   return (
     <g style={{ cursor: "pointer" }} onClick={() => onSelect(node.id)}>
 
@@ -149,12 +154,14 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, onSelect, onAddR
         />
       )}
 
+      {/* Sombra */}
       <rect
         x={x + NODE_SHADOW_DX} y={y + NODE_SHADOW_DY}
         width={PERSON_W} height={PERSON_H}
         rx={NODE_RADIUS}
         fill="var(--node-shadow-color)"
       />
+      {/* Nodo */}
       <rect
         x={x} y={y}
         width={PERSON_W} height={PERSON_H}
@@ -163,6 +170,7 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, onSelect, onAddR
         stroke={borderColor}
         strokeWidth={sw}
       />
+      {/* Barra acento */}
       <line
         x1={x + NODE_ACCENT_X} y1={y + NODE_ACCENT_TOP}
         x2={x + NODE_ACCENT_X} y2={y + PERSON_H - NODE_ACCENT_TOP}
@@ -172,6 +180,7 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, onSelect, onAddR
       />
       <PersonAvatar cx={x + AVATAR_CX} cy={y + AVATAR_CY} r={AVATAR_R} />
 
+      {/* Nombre */}
       <text
         x={x + TEXT_X} y={y + 22}
         fontSize="var(--node-font-name)"
@@ -181,6 +190,7 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, onSelect, onAddR
       >
         {name}
       </text>
+      {/* Fecha */}
       <text
         x={x + TEXT_X} y={y + 38}
         fontSize="var(--node-font-date)"
@@ -189,24 +199,58 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, onSelect, onAddR
         {dates}
       </text>
 
-      {!isGhostActive && (
-        <g onClick={(e) => { e.stopPropagation(); onEditPerson(node.id); }} style={{ cursor: "pointer" }}>
-          <circle
-            cx={x + PERSON_W - NODE_BTN_EDIT_R - 5}
-            cy={y + NODE_BTN_EDIT_CY}
-            r={NODE_BTN_EDIT_R}
-            fill="white" stroke={accentColor} strokeWidth={1} opacity={0.8}
-          />
+      {/* Badge xN — esquina sup izq, mitad afuera */}
+      {unionCount > 1 && (
+        <g>
+          <circle cx={badgeCX} cy={badgeCY} r={NODE_BADGE_R} fill="var(--icon-badge-bg)" />
           <text
-            x={x + PERSON_W - NODE_BTN_EDIT_R - 5}
-            y={y + NODE_BTN_EDIT_CY + 4}
+            x={badgeCX} y={badgeCY + 4}
             textAnchor="middle"
-            fontSize="var(--node-btn-font)"
-            fill={accentColor}
-          >✏</text>
+            fontSize={NODE_BADGE_FONT}
+            fontWeight="bold"
+            fill="var(--icon-badge-text)"
+            fontFamily="system-ui, sans-serif"
+          >
+            x{unionCount}
+          </text>
         </g>
       )}
 
+      {/* Simbolito link — fuera del nodo, esquina sup der */}
+      {!isGhostActive && hasExternalTree && (
+        <g
+          onClick={(e) => { e.stopPropagation(); onFocusPerson(node.id); }}
+          style={{ cursor: "pointer" }}
+        >
+          <circle cx={linkCX} cy={linkCY} r={NODE_ICON_LINK_R} fill="var(--icon-link-bg)" stroke={accentColor} strokeWidth={1.5} />
+          <use
+            href="/icons.svg#icon-link-tree"
+            x={linkCX - NODE_ICON_SIZE / 2} y={linkCY - NODE_ICON_SIZE / 2}
+            width={NODE_ICON_SIZE} height={NODE_ICON_SIZE}
+            stroke={accentColor}
+            color={accentColor}
+          />
+        </g>
+      )}
+
+      {/* Lápiz — dentro del nodo, esquina inf der */}
+      {!isGhostActive && (
+        <g
+          onClick={(e) => { e.stopPropagation(); onEditPerson(node.id); }}
+          style={{ cursor: "pointer" }}
+        >
+          <circle cx={editCX} cy={editCY} r={NODE_ICON_EDIT_R} fill="var(--icon-edit-bg)" stroke={accentColor} strokeWidth={1} opacity={0.9} />
+          <use
+            href="/icons.svg#icon-edit"
+            x={editCX - NODE_ICON_SIZE / 2} y={editCY - NODE_ICON_SIZE / 2}
+            width={NODE_ICON_SIZE} height={NODE_ICON_SIZE}
+            stroke={accentColor}
+            color={accentColor}
+          />
+        </g>
+      )}
+
+      {/* Botón + abajo centro */}
       <g onClick={(e) => { e.stopPropagation(); onAddRelative(node.id); }} style={{ cursor: "pointer" }}>
         <circle
           cx={x + PERSON_W / 2}
@@ -214,21 +258,20 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, onSelect, onAddR
           r={NODE_BTN_ADD_R}
           fill="white" stroke={accentColor} strokeWidth={1.5} opacity={0.85}
         />
-        <text
-          x={x + PERSON_W / 2}
-          y={y + PERSON_H + NODE_BTN_ADD_CY + 5}
-          textAnchor="middle"
-          fontSize="var(--node-btn-add-font)"
-          fill={accentColor}
-          fontWeight="300"
-        >+</text>
+        <use
+          href="/icons.svg#icon-add"
+          x={x + PERSON_W / 2 - NODE_ICON_SIZE / 2}
+          y={y + PERSON_H + NODE_BTN_ADD_CY - NODE_ICON_SIZE / 2}
+          width={NODE_ICON_SIZE} height={NODE_ICON_SIZE}
+          stroke={accentColor}
+          color={accentColor}
+        />
       </g>
 
     </g>
   );
 }
 
-// ── Dissolve cell ─────────────────────────────────────────────────────────
 function DissolveCell({ edge, dissolvingRelId, dissolveYear, setDissolvingRelId, setDissolveYear, onDissolveSpouse, spouseRelId }) {
   const relId = spouseRelId(edge.id);
   const isDissolving = dissolvingRelId === relId;
@@ -257,7 +300,6 @@ function DissolveCell({ edge, dissolvingRelId, dissolveYear, setDissolvingRelId,
   );
 }
 
-// ── Main GraphView ────────────────────────────────────────────────────────
 export default function GraphView({
   graph,
   onDissolveSpouse,
@@ -267,6 +309,7 @@ export default function GraphView({
   onAddRelative = null,
   onEditPerson = null,
   onDeletePerson = null,
+  onFocusPerson = null,
   searchQuery = "",
 }) {
   const layout = useMemo(() => layoutFamilyGraph(graph), [graph]);
@@ -320,6 +363,27 @@ export default function GraphView({
     onAddRelative?.(nodeId, slotType);
   }
 
+  const personUnionCount = useMemo(() => {
+    const count = new Map();
+    for (const node of layout.nodes) {
+      if (node.type !== "union") continue;
+      for (const pid of [node.data.person_a_id, node.data.person_b_id]) {
+        count.set(pid, (count.get(pid) ?? 0) + 1);
+      }
+    }
+    return count;
+  }, [layout.nodes]);
+
+  const personHasAncestors = useMemo(() => {
+    const result = new Set();
+    for (const edge of layout.edges) {
+      if (edge.type === "father" || edge.type === "mother" || edge.type === "child_of") {
+        result.add(edge.target);
+      }
+    }
+    return result;
+  }, [layout.edges]);
+
   const canvasW = layout.nodes.length
     ? Math.max(...layout.nodes.map((n) => n.x + (n.type === "union" ? UNION_R * 2 : PERSON_W)))
     + CANVAS_PADDING * 2 + GHOST_W + CANVAS_PADDING
@@ -349,8 +413,7 @@ export default function GraphView({
           </div>
         ) : (
           <>
-            {/* SVG inferior — árbol real */}
-            <svg width={canvasW} height={canvasH} style={{ display: "block" }}>
+            <svg width={canvasW} height={canvasH} style={{ display: "block" }} overflow="visible">
               <defs>
                 <pattern id="grid" width={40} height={40} patternUnits="userSpaceOnUse">
                   <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" strokeWidth={0.5} />
@@ -360,7 +423,6 @@ export default function GraphView({
 
               <g transform={`translate(${CANVAS_PADDING}, ${CANVAS_PADDING})`}>
 
-                {/* Edges */}
                 {layout.edges.map((edge) => {
                   const src = nodeMap.get(edge.source);
                   const tgt = nodeMap.get(edge.target);
@@ -381,7 +443,6 @@ export default function GraphView({
                   );
                 })}
 
-                {/* Person nodes */}
                 {layout.nodes.filter((n) => n.type === "person").map((node) => (
                   <g key={node.id} opacity={nodeOpacity(node)}>
                     <PersonNode
@@ -389,15 +450,16 @@ export default function GraphView({
                       isSelected={selectedNodeId === node.id}
                       isFocus={focusNodeId === node.id}
                       isGhostActive={activeGhostNodeId === node.id}
+                      unionCount={personUnionCount.get(node.id) ?? 0}
+                      hasExternalTree={!personHasAncestors.has(node.id) && (personUnionCount.get(node.id) ?? 0) > 0}
                       onSelect={onSelectNode ?? (() => { })}
                       onAddRelative={handleAddRelative}
                       onEditPerson={onEditPerson ?? (() => { })}
-                      onDeletePerson={onDeletePerson ?? (() => { })}
+                      onFocusPerson={onFocusPerson ?? (() => { })}
                     />
                   </g>
                 ))}
 
-                {/* Union nodes */}
                 {layout.nodes.filter((n) => n.type === "union").map((node) => (
                   <g key={node.id} opacity={activeGhostNodeId ? 0.08 : 1}>
                     {UNION_DOT_R > 0 && (
@@ -414,17 +476,16 @@ export default function GraphView({
               </g>
             </svg>
 
-            {/* Overlay oscuro */}
             {activeGhostNodeId && (
               <div className="ghost-overlay" onClick={() => setActiveGhostNodeId(null)} />
             )}
 
-            {/* SVG superior — nodos fantasma encima del overlay */}
             {activeGhostNodeId && activeNode && (
               <svg
                 width={canvasW}
                 height={canvasH}
                 style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 15 }}
+                overflow="visible"
               >
                 <g transform={`translate(${CANVAS_PADDING}, ${CANVAS_PADDING})`}>
 
@@ -434,10 +495,12 @@ export default function GraphView({
                       isSelected={false}
                       isFocus={false}
                       isGhostActive={true}
+                      unionCount={0}
+                      hasExternalTree={false}
                       onSelect={() => { }}
                       onAddRelative={() => { }}
                       onEditPerson={() => { }}
-                      onDeletePerson={() => { }}
+                      onFocusPerson={() => { }}
                     />
                   </g>
 
@@ -480,7 +543,6 @@ export default function GraphView({
         )}
       </div>
 
-      {/* Tabla de relaciones */}
       <details className="rels-details">
         <summary><span>▶</span> Relaciones ({graph.edges.length})</summary>
         <div className="rels-table-wrap">

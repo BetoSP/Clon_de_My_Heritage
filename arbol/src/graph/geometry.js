@@ -14,61 +14,77 @@
 // ══════════════════════════════════════════════════════════════════════════
 
 // ── Nodos persona ─────────────────────────────────────────────────────────
-export const PERSON_W = 140; // ancho del nodo persona
-export const PERSON_H = 80;  // alto del nodo persona
-export const AVATAR_CX = 22;  // centro X del ícono dentro del nodo
-export const AVATAR_CY = 38;  // centro Y del ícono dentro del nodo
-export const AVATAR_R = 14;  // radio del ícono de persona
-export const TEXT_X = 42;  // inicio X del texto dentro del nodo
+export const PERSON_W = 140;
+export const PERSON_H = 80;
+export const AVATAR_CX = 22;
+export const AVATAR_CY = 38;
+export const AVATAR_R = 14;
+export const TEXT_X = 42;
 
 // Geometría interna del nodo
-export const NODE_RADIUS = 8;  // rx esquinas del nodo
-export const NODE_ACCENT_X = 4;  // x de la barra lateral de acento
-export const NODE_ACCENT_TOP = 10; // y inicio de la barra lateral
-export const NODE_ACCENT_W = 4;  // strokeWidth de la barra lateral
-export const NODE_SHADOW_DX = 2;  // desplazamiento X de la sombra
-export const NODE_SHADOW_DY = 3;  // desplazamiento Y de la sombra
+export const NODE_RADIUS = 8;
+export const NODE_ACCENT_X = 4;
+export const NODE_ACCENT_TOP = 10;
+export const NODE_ACCENT_W = 4;
+export const NODE_SHADOW_DX = 2;
+export const NODE_SHADOW_DY = 3;
 
 // Selección
-export const NODE_SELECTION_PAD = 6;  // padding alrededor del nodo seleccionado
-export const NODE_SELECTION_RADIUS = 14; // rx de la selección
+export const NODE_SELECTION_PAD = 6;
+export const NODE_SELECTION_RADIUS = 14;
 
 // Botones dentro del nodo
-export const NODE_BTN_EDIT_R = 9;  // radio botón ✏️
-export const NODE_BTN_EDIT_CY = 14; // cy del botón ✏️ (desde top del nodo)
-export const NODE_BTN_ADD_R = 10; // radio botón +
-export const NODE_BTN_ADD_CY = 14; // distancia del + por debajo del nodo
+export const NODE_BTN_EDIT_R = 9;
+export const NODE_BTN_EDIT_CY = 14;
+export const NODE_BTN_ADD_R = 10;
+export const NODE_BTN_ADD_CY = 14;
 
 // Truncado de nombre
-export const NODE_NAME_MAX_CHARS = 19; // caracteres máximos antes de truncar
+export const NODE_NAME_MAX_CHARS = 19;
+
+// ── Íconos de nodo ────────────────────────────────────────────────────────
+// Tamaños — modificar para escalar íconos en todos los nodos simultáneamente
+export const NODE_ICON_SIZE = 14;        // tamaño base de todos los íconos SVG
+export const NODE_ICON_EDIT_R = 9;       // radio del círculo del lápiz
+export const NODE_ICON_LINK_R = 10;      // radio del círculo del link externo
+export const NODE_BADGE_R = 10;          // radio del badge xN
+export const NODE_BADGE_FONT = 9;        // fontSize del texto del badge
+
+// Posiciones relativas al nodo
+export const NODE_ICON_EDIT_CX = PERSON_W - 12;  // lápiz: x desde origen del nodo
+export const NODE_ICON_EDIT_CY = PERSON_H - 12;  // lápiz: y desde origen del nodo
+export const NODE_ICON_LINK_DX = PERSON_W + 10;  // link: x fuera del nodo (derecha)
+export const NODE_ICON_LINK_DY = 0;              // link: y desde top del nodo
+export const NODE_BADGE_DX = 0;                  // badge: x desde origen (esquina izq)
+export const NODE_BADGE_DY = 0;                  // badge: y desde top del nodo
 
 // ── Union node ────────────────────────────────────────────────────────────
-export const UNION_R = 12; // radio lógico (usado en cálculos de posición)
-export const UNION_DOT_R = 4;  // radio del punto visible. 0 = invisible
+export const UNION_R = 12;
+export const UNION_DOT_R = 4;
 
 // ── Layout del árbol ──────────────────────────────────────────────────────
-export const H_SPACING = 200; // espaciado horizontal entre nodos de misma generación
-export const V_SPACING = 160; // espaciado vertical entre generaciones
-export const CANVAS_PADDING = 120; // padding mínimo alrededor del árbol
+export const H_SPACING = 200;
+export const V_SPACING = 160;
+export const CANVAS_PADDING = 120;
 
 // ── Líneas del árbol ──────────────────────────────────────────────────────
-export const EDGE_RADIUS = 8;   // radio de los codos ortogonales
-export const EDGE_STROKE_PARENT = 1.5; // grosor líneas parentales
-export const EDGE_STROKE_SPOUSE = 2;   // grosor líneas de cónyuge
+export const EDGE_RADIUS = 8;
+export const EDGE_STROKE_PARENT = 1.5;
+export const EDGE_STROKE_SPOUSE = 2;
 
 // ── Nodos fantasma ────────────────────────────────────────────────────────
-export const GHOST_W = 170; // ancho del nodo fantasma
-export const GHOST_H = 56;  // alto del nodo fantasma
-export const GHOST_GAP_H = 40;  // distancia horizontal desde borde del nodo activo
-export const GHOST_GAP_V = 50;  // distancia vertical desde borde del nodo activo
-export const GHOST_RADIUS = 10;  // rx esquinas del nodo fantasma
-export const GHOST_AVATAR_CX = 28;  // centro X del ícono dentro del fantasma
-export const GHOST_STROKE_W = 1.5; // grosor borde del nodo fantasma
-export const GHOST_TEXT_X = 54;  // inicio X del texto dentro del fantasma
-export const GHOST_SHADOW_DX = 2;   // desplazamiento X sombra del fantasma
-export const GHOST_SHADOW_DY = 3;   // desplazamiento Y sombra del fantasma
-export const GHOST_LINE_W = 1;   // grosor líneas fantasma
-export const GHOST_LINE_OPACITY = 0.9; // opacidad líneas fantasma
+export const GHOST_W = 170;
+export const GHOST_H = 56;
+export const GHOST_GAP_H = 40;
+export const GHOST_GAP_V = 50;
+export const GHOST_RADIUS = 10;
+export const GHOST_AVATAR_CX = 28;
+export const GHOST_STROKE_W = 1.5;
+export const GHOST_TEXT_X = 54;
+export const GHOST_SHADOW_DX = 2;
+export const GHOST_SHADOW_DY = 3;
+export const GHOST_LINE_W = 1;
+export const GHOST_LINE_OPACITY = 0.9;
 
 // ── Offsets de cada slot fantasma ─────────────────────────────────────────
 export function getSlotOffset(position) {
@@ -136,22 +152,10 @@ export function elbowPath(x1, y1, x2, y2, r = EDGE_RADIUS) {
 }
 
 // ── Líneas desde borde del nodo activo al borde del nodo fantasma ─────────
-//
-// top/bottom: salen del centro superior/inferior del nodo activo,
-//             bajan/suben verticalmente hasta la mitad del gap,
-//             luego van horizontal al centro del fantasma.
-//
-// right: sale del borde derecho, va horizontal directo al fantasma.
-//
-// left (hermanos): sale del borde izquierdo del nodo activo,
-//                  va horizontal hasta un punto medio,
-//                  luego sube/baja verticalmente al centro del fantasma.
-//                  Forma un tridente compartido entre hermano y hermana.
-
 export function ghostLinePath(an, gx, gy, position) {
     const cx = an.x + PERSON_W / 2;
     const cy = an.y + PERSON_H / 2;
-    const midX = an.x - GHOST_GAP_H / 2; // punto medio del tridente (hermanos)
+    const midX = an.x - GHOST_GAP_H / 2;
 
     switch (position) {
         case "top-left":

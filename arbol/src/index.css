@@ -137,6 +137,12 @@
   --node-btn-add-font: 15px;
   /* fontSize botón agregar */
 
+  /* ── Íconos de nodo — colores ────────────────────────────────────────── */
+  --icon-edit-bg: #ffffff;
+  --icon-link-bg: #ffffff;
+  --icon-badge-bg: var(--color-danger);
+  --icon-badge-text: #ffffff;
+
   /* ── Ícono de persona dentro del nodo ───────────────────────────────── */
   --avatar-bg: #e5e7eb;
   --avatar-fill: #9ca3af;
