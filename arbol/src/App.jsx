@@ -1,4 +1,3 @@
-// App.jsx
 import { useEffect, useMemo, useState, useCallback } from "react";
 import GraphView from "./components/GraphView";
 import TopNavBar from "./components/TopNavBar";
@@ -86,23 +85,15 @@ export default function App() {
     };
   }
 
-  // ── Calcular progenitor sugerido por defecto ──────────────────────────────
   function getDefaultParentSuggestion(fromPersonId, slotType) {
     if (slotType !== "father" && slotType !== "mother") return null;
-
-    // Si agregamos madre → buscamos si ya tiene padre → proponemos pareja del padre
-    // Si agregamos padre → buscamos si ya tiene madre → proponemos pareja de la madre
     const existingParentType = slotType === "mother" ? "father" : "mother";
-
     const existingParentRel = relationships.find(
       (r) => r.type === existingParentType && String(r.person_b_id) === String(fromPersonId)
     );
     if (!existingParentRel) return null;
-
     const existingParent = people.find((p) => String(p.id) === String(existingParentRel.person_a_id));
     if (!existingParent) return null;
-
-    // Buscar pareja del progenitor existente
     const spouseRel = relationships.find(
       (r) => r.type === "spouse" && (
         String(r.person_a_id) === String(existingParent.id) ||
@@ -110,11 +101,9 @@ export default function App() {
       )
     );
     if (!spouseRel) return null;
-
     const spouseId = String(spouseRel.person_a_id) === String(existingParent.id)
       ? spouseRel.person_b_id
       : spouseRel.person_a_id;
-
     return people.find((p) => String(p.id) === String(spouseId)) ?? null;
   }
 
@@ -216,13 +205,26 @@ export default function App() {
         }
       }
 
-      // Si eligió una persona existente (padre/madre)
+      // Persona existente elegida — padre, madre o cónyuge
       if (existingPersonId) {
-        await addRelationship({
-          person_a_id: Number(existingPersonId),
-          person_b_id: Number(fromPersonId),
-          type: slotType,
-        });
+        if (slotType === "spouse" || slotType === "spouse_another") {
+          await addRelationship({
+            person_a_id: Number(fromPersonId),
+            person_b_id: Number(existingPersonId),
+            type: "spouse",
+            marriage_day: relationship?.marriage_day ?? null,
+            marriage_month: relationship?.marriage_month ?? null,
+            marriage_year: relationship?.marriage_year ?? null,
+            marriage_place: relationship?.marriage_place ?? null,
+            notes: relationship?.notes ?? null,
+          });
+        } else {
+          await addRelationship({
+            person_a_id: Number(existingPersonId),
+            person_b_id: Number(fromPersonId),
+            type: slotType,
+          });
+        }
         setModalAddRelative(null);
         loadData();
         return;
@@ -366,7 +368,6 @@ export default function App() {
     })()
     : [];
 
-  // Candidatos para padre/madre (personas existentes filtradas por género)
   const addRelativeParentCandidates = modalAddRelative &&
     (modalAddRelative.slotType === "father" || modalAddRelative.slotType === "mother")
     ? people.filter((p) => {
@@ -380,6 +381,12 @@ export default function App() {
   const addRelativeDefaultParent = modalAddRelative
     ? getDefaultParentSuggestion(modalAddRelative.fromPersonId, modalAddRelative.slotType)
     : null;
+
+  // Candidatos para cónyuge — todas las personas excepto la persona actual
+  const addRelativeSpouseCandidates = modalAddRelative &&
+    (modalAddRelative.slotType === "spouse" || modalAddRelative.slotType === "spouse_another")
+    ? people.filter((p) => String(p.id) !== String(modalAddRelative.fromPersonId))
+    : [];
 
   return (
     <div className="app-shell">
@@ -452,6 +459,7 @@ export default function App() {
           fromPerson={addRelativeFromPerson}
           otherParentOptions={addRelativeOtherParentOptions}
           parentCandidates={addRelativeParentCandidates}
+          spouseCandidates={addRelativeSpouseCandidates}
           defaultParent={addRelativeDefaultParent}
           suggestedSurname1={addRelativeSuggested.surname1}
           suggestedSurname2={addRelativeSuggested.surname2}

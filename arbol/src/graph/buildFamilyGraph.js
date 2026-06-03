@@ -12,12 +12,13 @@
 //
 // PersonNode : { id: string, type: "person", data: { name, surnames, birth_day, birth_month,
 //               birth_year, gender, adopted } }
-// UnionNode  : { id: string, type: "union",  data: { person_a_id: string, person_b_id: string } }
+// UnionNode  : { id: string, type: "union",  data: { person_a_id: string, person_b_id: string,
+//               rel_type: string } }
 // Edge       : { id: string, type: string, source: string, target: string,
 //               since_year: number|null, until_year: number|null }
 //
 // Union nodes are derived at runtime — they are never stored in the database.
-// Each unique couple (spouse relationship) produces exactly one union node,
+// Each unique couple (spouse or co_parent relationship) produces exactly one union node,
 // identified by the deterministic key "min_id-max_id".
 //
 // Children whose BOTH parents belong to a recognized couple are connected to
@@ -25,7 +26,7 @@
 // one recorded parent, or whose parents are not a registered couple, keep
 // direct parent→child edges.
 
-import { PARENT_TYPES } from "./relationshipTypes.js";
+import { PARENT_TYPES, COUPLE_TYPES } from "./relationshipTypes.js";
 
 export function buildFamilyGraph(people, relationships) {
   // ── Step 1: Person nodes ─────────────────────────────────────────────────
@@ -52,7 +53,7 @@ export function buildFamilyGraph(people, relationships) {
   const unionNodeMap = new Map();
 
   for (const rel of relationships) {
-    if (rel.type !== "spouse") continue;
+    if (!COUPLE_TYPES.has(rel.type)) continue;
     const a = Math.min(rel.person_a_id, rel.person_b_id);
     const b = Math.max(rel.person_a_id, rel.person_b_id);
     const key = `${a}-${b}`;
@@ -60,16 +61,20 @@ export function buildFamilyGraph(people, relationships) {
       unionNodeMap.set(key, {
         id: `union-${key}`,
         type: "union",
-        data: { person_a_id: String(a), person_b_id: String(b) },
+        data: {
+          person_a_id: String(a),
+          person_b_id: String(b),
+          rel_type: rel.type,
+        },
       });
     }
   }
 
-  // ── Step 3: Spouse edges (person → union node) ───────────────────────────
+  // ── Step 3: Couple edges (person → union node) ───────────────────────────
   const edges = [];
 
   for (const rel of relationships) {
-    if (rel.type !== "spouse") continue;
+    if (!COUPLE_TYPES.has(rel.type)) continue;
     const a = Math.min(rel.person_a_id, rel.person_b_id);
     const b = Math.max(rel.person_a_id, rel.person_b_id);
     const unionId = unionNodeMap.get(`${a}-${b}`).id;
@@ -77,7 +82,7 @@ export function buildFamilyGraph(people, relationships) {
     edges.push(
       {
         id: `edge-${rel.id}-a`,
-        type: "spouse",
+        type: rel.type,
         source: String(a),
         target: unionId,
         since_year: rel.since_year ?? null,
@@ -85,7 +90,7 @@ export function buildFamilyGraph(people, relationships) {
       },
       {
         id: `edge-${rel.id}-b`,
-        type: "spouse",
+        type: rel.type,
         source: String(b),
         target: unionId,
         since_year: rel.since_year ?? null,

@@ -53,7 +53,7 @@ function getVacantSlots(nodeId, edges, nodes) {
   const hasFather = edges.some((e) => e.target === nodeId && e.type === "father");
   const hasMother = edges.some((e) => e.target === nodeId && e.type === "mother");
   const hasSpouse = edges.some((e) =>
-    e.type === "spouse" && (
+    (e.type === "spouse" || e.type === "co_parent") && (
       e.source === nodeId ||
       nodes.filter((n) => n.type === "union").some((u) =>
         u.id === e.target &&
@@ -361,12 +361,22 @@ export default function GraphView({
                     if (!src || !tgt) return null;
                     const d = edgePath(src, tgt);
                     const isSpouse = edge.type === "spouse";
+                    const isCoParent = edge.type === "co_parent";
                     const dissolved = edge.until_year !== null;
                     return (
                       <path key={edge.id} d={d} fill="none"
-                        stroke={isSpouse ? (dissolved ? "var(--edge-color-dissolved)" : "var(--edge-color-spouse)") : "var(--edge-color-parent)"}
-                        strokeWidth={isSpouse ? EDGE_STROKE_SPOUSE : EDGE_STROKE_PARENT}
-                        strokeDasharray={isSpouse && dissolved ? "5,3" : undefined}
+                        stroke={
+                          isCoParent
+                            ? "var(--edge-color-co-parent)"
+                            : isSpouse
+                              ? (dissolved ? "var(--edge-color-dissolved)" : "var(--edge-color-spouse)")
+                              : "var(--edge-color-parent)"
+                        }
+                        strokeWidth={isSpouse || isCoParent ? EDGE_STROKE_SPOUSE : EDGE_STROKE_PARENT}
+                        strokeDasharray={
+                          isCoParent ? "6,4" :
+                            isSpouse && dissolved ? "5,3" : undefined
+                        }
                         strokeLinecap="round" strokeLinejoin="round"
                         strokeOpacity={activeGhostNodeId ? 0.08 : 0.8}
                       />

@@ -9,7 +9,7 @@
 //
 // ⚠️  Todas las constantes dimensionales viven en geometry.js.
 
-import { PARENT_EDGE_TYPES } from "./relationshipTypes.js";
+import { PARENT_EDGE_TYPES, COUPLE_TYPES } from "./relationshipTypes.js";
 import {
   PERSON_W,
   PERSON_H,
@@ -34,7 +34,7 @@ export function layoutFamilyGraph(graph) {
     if (PARENT_EDGE_TYPES.has(edge.type)) {
       parentsOf.get(edge.target)?.push(edge.source);
     }
-    if (edge.type === "spouse") {
+    if (COUPLE_TYPES.has(edge.type)) {
       if (!unionPersons.has(edge.target)) unionPersons.set(edge.target, []);
       unionPersons.get(edge.target).push(edge.source);
       if (!personUnions.has(edge.source)) personUnions.set(edge.source, []);
@@ -66,7 +66,7 @@ export function layoutFamilyGraph(graph) {
     for (const unionId of personUnions.get(personId) ?? []) {
       const members = unionPersons.get(unionId) ?? [];
       if (members.includes(spouseId)) {
-        const edge = edges.find((e) => e.type === "spouse" && e.target === unionId);
+        const edge = edges.find((e) => COUPLE_TYPES.has(e.type) && e.target === unionId);
         return edge?.since_year ?? null;
       }
     }
@@ -133,16 +133,11 @@ export function layoutFamilyGraph(graph) {
   const maxGenV = Math.max(...gen.values(), 0);
 
   // ── 3. Construir grupos ───────────────────────────────────────────────────
-  // Un grupo = persona principal + sus cónyuges
-  // La persona principal es la de menor ID dentro de cada pareja
-  // (para raíces sin ancestros)
 
-  const isSecondaryInGroup = new Set(); // personas que van a la derecha de su pareja
+  const isSecondaryInGroup = new Set();
 
-  // Para cada union node, determinar quién es principal y quién es secundario
   for (const [unionId, spouseIds] of unionPersons) {
     if (spouseIds.length < 2) continue;
-    // Ordenar por: primero quien tiene ancestros, luego por ID menor
     const sorted = [...spouseIds].sort((a, b) => {
       const aHasAncestors = ancestorPersonIds(a).length > 0;
       const bHasAncestors = ancestorPersonIds(b).length > 0;
@@ -150,7 +145,6 @@ export function layoutFamilyGraph(graph) {
       if (!aHasAncestors && bHasAncestors) return 1;
       return Number(a) - Number(b);
     });
-    // El primero es principal, el resto son secundarios
     for (let i = 1; i < sorted.length; i++) {
       isSecondaryInGroup.add(sorted[i]);
     }
@@ -161,7 +155,6 @@ export function layoutFamilyGraph(graph) {
   const subtreeWidth = new Map();
 
   function getGroupSpouses(personId) {
-    // Cónyuges que son secundarios de esta persona
     return getSpouseIds(personId)
       .filter((sid) => isSecondaryInGroup.has(sid))
       .sort((a, b) => {
@@ -211,7 +204,6 @@ export function layoutFamilyGraph(graph) {
     return w;
   }
 
-  // Raíces
   const roots = nodes.filter(
     (n) => n.type === "person" &&
       ancestorPersonIds(n.id).length === 0 &&
@@ -240,43 +232,27 @@ export function layoutFamilyGraph(graph) {
     const groupW = (1 + groupSpouses.length) * H_SPACING;
 
     if (children.length === 0) {
-      // Nodo hoja
       xPos.set(personId, startX);
       groupSpouses.forEach((sid, i) => xPos.set(sid, startX + (i + 1) * H_SPACING));
       return startX + groupW;
     }
 
-    // Posicionar hijos primero
     let childX = startX;
     for (const cid of children) {
       childX = placeSubtree(cid, childX);
     }
 
-    // Calcular el span de los hijos
     const firstChild = children[0];
     const lastChild = children[children.length - 1];
-
-    // Centro izquierdo: centro del primer hijo (incluyendo sus cónyuges)
-    const firstChildSpouses = getGroupSpouses(firstChild);
-    const firstChildLeft = xPos.get(firstChild) ?? startX;
-    const firstChildRight = firstChildLeft + (1 + firstChildSpouses.length) * H_SPACING - H_SPACING + PERSON_W;
-    const firstChildCenter = (firstChildLeft + PERSON_W / 2);
-
-    // Centro derecho: centro del último hijo (incluyendo sus cónyuges)
+    const firstChildCenter = (xPos.get(firstChild) ?? startX) + PERSON_W / 2;
     const lastChildSpouses = getGroupSpouses(lastChild);
-    const lastChildLeft = xPos.get(lastChild) ?? startX;
     const lastChildRightmost = lastChildSpouses.length > 0
-      ? (xPos.get(lastChildSpouses[lastChildSpouses.length - 1]) ?? lastChildLeft) + PERSON_W / 2
-      : lastChildLeft + PERSON_W / 2;
+      ? (xPos.get(lastChildSpouses[lastChildSpouses.length - 1]) ?? 0) + PERSON_W / 2
+      : (xPos.get(lastChild) ?? startX) + PERSON_W / 2;
 
     const childrenSpanCenter = (firstChildCenter + lastChildRightmost) / 2;
-
-    // Centrar el grupo sobre los hijos usando el union node como centro
-    // El union node queda entre persona y primer cónyuge
-    // Centro del grupo = persona + PERSON_W/2 + (groupSpouses.length * H_SPACING / 2)
     const groupCenterOffset = (groupSpouses.length * H_SPACING) / 2;
     const personX = childrenSpanCenter - PERSON_W / 2 - groupCenterOffset;
-
     const safePersonX = Math.max(personX, startX);
 
     xPos.set(personId, safePersonX);
@@ -290,7 +266,6 @@ export function layoutFamilyGraph(graph) {
     currentX = placeSubtree(root.id, currentX);
   }
 
-  // Normalizar
   const minX = Math.min(...xPos.values(), 0);
   if (minX < 0) {
     for (const [id, x] of xPos) xPos.set(id, x - minX);

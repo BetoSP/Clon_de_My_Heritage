@@ -82,6 +82,8 @@
   /* líneas de cónyuge disueltas */
   --edge-color-ghost: #94a3b8;
   /* líneas de nodos fantasma */
+  --edge-color-co-parent: #9c27b0;
+  /* líneas de co-parentes */
 
   /* ── Nodo persona — masculino ────────────────────────────────────────── */
   --node-male-bg: #f0fdff;

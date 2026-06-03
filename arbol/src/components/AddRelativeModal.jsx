@@ -4,9 +4,10 @@ const DATE_PRECISION = ["Exactamente", "Antes de", "Después de", "Alrededor de"
 
 const SPOUSE_TYPES = [
     { value: "married", label: "Casado/a" },
-    { value: "divorced", label: "Divorciado/a" },
     { value: "partner", label: "Pareja" },
+    { value: "co_parent", label: "Co-padres (sin vínculo formal)" },
     { value: "separated", label: "Separado/a" },
+    { value: "divorced", label: "Divorciado/a" },
     { value: "unknown", label: "Desconocido" },
 ];
 
@@ -74,13 +75,7 @@ function NewParentForm({ gender, onGenderChange, onData }) {
                     { value: "unknown", label: "Desconocido" },
                 ].map((opt) => (
                     <label key={opt.value} className="modal-radio-label">
-                        <input
-                            type="radio"
-                            name="newParentGender"
-                            value={opt.value}
-                            checked={gender === opt.value}
-                            onChange={() => onGenderChange(opt.value)}
-                        />
+                        <input type="radio" name="newParentGender" value={opt.value} checked={gender === opt.value} onChange={() => onGenderChange(opt.value)} />
                         {opt.label}
                     </label>
                 ))}
@@ -105,7 +100,6 @@ function NewParentForm({ gender, onGenderChange, onData }) {
     );
 }
 
-// Buscador de persona existente con filtro en tiempo real
 function PersonSearcher({ candidates, defaultPerson, label, onSelect }) {
     const defaultText = defaultPerson
         ? `${defaultPerson.name} ${defaultPerson.surnames ?? ""}`.trim()
@@ -157,17 +151,12 @@ function PersonSearcher({ candidates, defaultPerson, label, onSelect }) {
                     type="button"
                     onClick={() => setShowAdvanced((v) => !v)}
                     style={{
-                        flexShrink: 0,
-                        width: 34,
-                        height: 34,
+                        flexShrink: 0, width: 34, height: 34,
                         border: "1px solid var(--color-border-medium)",
                         borderRadius: "var(--radius-sm)",
                         background: showAdvanced ? "var(--color-primary-light)" : "white",
-                        cursor: "pointer",
-                        fontSize: 16,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        cursor: "pointer", fontSize: 16,
+                        display: "flex", alignItems: "center", justifyContent: "center",
                     }}
                     title="Búsqueda avanzada"
                 >
@@ -175,52 +164,26 @@ function PersonSearcher({ candidates, defaultPerson, label, onSelect }) {
                 </button>
             </div>
 
-            {/* Filtros avanzados */}
             {showAdvanced && (
                 <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                     <div className="modal-field modal-field--sm">
                         <label className="modal-label">Año nac.</label>
-                        <input
-                            className="form-input"
-                            type="number"
-                            min="1000" max="2100"
-                            placeholder="Año"
-                            value={filterYear}
-                            onChange={(e) => setFilterYear(e.target.value)}
-                        />
+                        <input className="form-input" type="number" min="1000" max="2100" placeholder="Año" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} />
                     </div>
                     <div className="modal-field">
                         <label className="modal-label">Lugar nac.</label>
-                        <input
-                            className="form-input"
-                            type="text"
-                            placeholder="Ciudad, País..."
-                            value={filterPlace}
-                            onChange={(e) => setFilterPlace(e.target.value)}
-                        />
+                        <input className="form-input" type="text" placeholder="Ciudad, País..." value={filterPlace} onChange={(e) => setFilterPlace(e.target.value)} />
                     </div>
                 </div>
             )}
 
-            {/* Resultados */}
             {filtered.length > 0 && !selected && (
-                <div style={{
-                    border: "1px solid var(--color-border-light)",
-                    borderRadius: "var(--radius-md)",
-                    background: "white",
-                    maxHeight: 180,
-                    overflowY: "auto",
-                }}>
+                <div style={{ border: "1px solid var(--color-border-light)", borderRadius: "var(--radius-md)", background: "white", maxHeight: 180, overflowY: "auto" }}>
                     {filtered.map((p) => (
                         <div
                             key={p.id}
                             onClick={() => handleSelect(p)}
-                            style={{
-                                padding: "8px 12px",
-                                cursor: "pointer",
-                                borderBottom: "1px solid var(--color-border-row)",
-                                fontSize: "var(--font-size-md)",
-                            }}
+                            style={{ padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid var(--color-border-row)", fontSize: "var(--font-size-md)" }}
                             onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg-hover)"}
                             onMouseLeave={(e) => e.currentTarget.style.background = "white"}
                         >
@@ -232,23 +195,10 @@ function PersonSearcher({ candidates, defaultPerson, label, onSelect }) {
                 </div>
             )}
 
-            {/* Persona seleccionada */}
             {selected && (
-                <div style={{
-                    padding: "6px 10px",
-                    background: "var(--color-primary-light)",
-                    borderRadius: "var(--radius-sm)",
-                    fontSize: "var(--font-size-md)",
-                    color: "var(--color-primary-dark)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                }}>
+                <div style={{ padding: "6px 10px", background: "var(--color-primary-light)", borderRadius: "var(--radius-sm)", fontSize: "var(--font-size-md)", color: "var(--color-primary-dark)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span>✓ {selected.name} {selected.surnames ?? ""}</span>
-                    <button
-                        onClick={() => { setSelected(null); setQuery(""); onSelect(null); }}
-                        style={{ border: "none", background: "none", cursor: "pointer", color: "var(--color-text-muted)", fontSize: 14 }}
-                    >✕</button>
+                    <button onClick={() => { setSelected(null); setQuery(""); onSelect(null); }} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--color-text-muted)", fontSize: 14 }}>✕</button>
                 </div>
             )}
         </div>
@@ -260,6 +210,7 @@ export default function AddRelativeModal({
     fromPerson,
     otherParentOptions = [],
     parentCandidates = [],
+    spouseCandidates = [],
     defaultParent = null,
     suggestedSurname1,
     suggestedSurname2,
@@ -317,9 +268,11 @@ export default function AddRelativeModal({
     const [newParentGender, setNewParentGender] = useState("male");
     const [newParentData, setNewParentData] = useState(null);
 
-    // Para padre/madre: persona existente seleccionada
     const [selectedExistingParent, setSelectedExistingParent] = useState(defaultParent ?? null);
     const [showNewForm, setShowNewForm] = useState(false);
+
+    const [selectedExistingSpouse, setSelectedExistingSpouse] = useState(null);
+    const [showNewSpouseForm, setShowNewSpouseForm] = useState(false);
 
     function getTitle() {
         const name = fromPerson?.name ?? "";
@@ -341,17 +294,32 @@ export default function AddRelativeModal({
     function handleSave() {
         if (saving) return;
 
-        // Si es padre/madre y eligió persona existente
+        // Padre/madre con persona existente
         if (isParent && selectedExistingParent && !showNewForm) {
             setSaving(true);
             onSave({ existingPersonId: selectedExistingParent.id });
             return;
         }
-
-        // Si es padre/madre y va a crear nueva — nombre obligatorio
         if (isParent && showNewForm && !nombre.trim()) return;
 
-        // Para otros tipos — nombre obligatorio
+        // Cónyuge con persona existente
+        if (isSpouse && selectedExistingSpouse && !showNewSpouseForm) {
+            setSaving(true);
+            const relType = spouseType === "co_parent" ? "co_parent" : "spouse";
+            onSave({
+                existingPersonId: selectedExistingSpouse.id,
+                relationship: {
+                    type: relType,
+                    marriage_day: marriageDay ? Number(marriageDay) : null,
+                    marriage_month: marriageMonth ? Number(marriageMonth) : null,
+                    marriage_year: marriageYear ? Number(marriageYear) : null,
+                    marriage_place: marriagePlace.trim() || null,
+                    notes: spouseType !== "married" && spouseType !== "co_parent" ? spouseType : null,
+                },
+            });
+            return;
+        }
+
         if (!isParent && !nombre.trim()) return;
 
         setSaving(true);
@@ -385,13 +353,14 @@ export default function AddRelativeModal({
 
         let relationship;
         if (isSpouse) {
+            const relType = spouseType === "co_parent" ? "co_parent" : "spouse";
             relationship = {
-                type: "spouse",
+                type: relType,
                 marriage_day: marriageDay ? Number(marriageDay) : null,
                 marriage_month: marriageMonth ? Number(marriageMonth) : null,
                 marriage_year: marriageYear ? Number(marriageYear) : null,
                 marriage_place: marriagePlace.trim() || null,
-                notes: spouseType !== "married" ? spouseType : null,
+                notes: spouseType !== "married" && spouseType !== "co_parent" ? spouseType : null,
             };
         } else if (isChild) {
             if (otherParentChoice === "new" && newParentData?.nombre?.trim()) {
@@ -426,6 +395,15 @@ export default function AddRelativeModal({
 
     const otherParentLabel = fromPerson?.gender === "male" ? "Madre" : "Padre";
     const parentLabel = slotType === "father" ? "Padre" : "Madre";
+    const spouseLabel = gender === "female" ? "esposa" : "esposo";
+
+    // El label de fecha cambia según el tipo de relación
+    const dateLabel = spouseType === "co_parent" ? "Fecha de inicio de convivencia" : "Fecha de matrimonio";
+    const placeLabel = spouseType === "co_parent" ? "Lugar de convivencia" : "Lugar de matrimonio";
+
+    const okDisabled = saving
+        || (isParent && !selectedExistingParent && !showNewForm)
+        || (isSpouse && !selectedExistingSpouse && !showNewSpouseForm);
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -445,13 +423,11 @@ export default function AddRelativeModal({
                             label={`Buscar ${parentLabel.toLowerCase()} existente`}
                             onSelect={setSelectedExistingParent}
                         />
-
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <div style={{ flex: 1, height: 1, background: "var(--color-border-light)" }} />
                             <span style={{ fontSize: "var(--font-size-sm)", color: "var(--color-text-muted)" }}>o</span>
                             <div style={{ flex: 1, height: 1, background: "var(--color-border-light)" }} />
                         </div>
-
                         <button
                             className={showNewForm ? "btn-secondary" : "btn-primary"}
                             onClick={() => { setShowNewForm((v) => !v); setSelectedExistingParent(null); }}
@@ -462,10 +438,33 @@ export default function AddRelativeModal({
                     </div>
                 )}
 
-                {/* ── Formulario de nueva persona (para padre/madre solo si showNewForm, para otros siempre) ── */}
-                {(!isParent || showNewForm) && (
+                {/* ── Buscador para cónyuge ── */}
+                {isSpouse && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <PersonSearcher
+                            candidates={spouseCandidates}
+                            defaultPerson={null}
+                            label={`Buscar pareja existente`}
+                            onSelect={setSelectedExistingSpouse}
+                        />
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ flex: 1, height: 1, background: "var(--color-border-light)" }} />
+                            <span style={{ fontSize: "var(--font-size-sm)", color: "var(--color-text-muted)" }}>o</span>
+                            <div style={{ flex: 1, height: 1, background: "var(--color-border-light)" }} />
+                        </div>
+                        <button
+                            className={showNewSpouseForm ? "btn-secondary" : "btn-primary"}
+                            onClick={() => { setShowNewSpouseForm((v) => !v); setSelectedExistingSpouse(null); }}
+                            style={{ alignSelf: "flex-start" }}
+                        >
+                            {showNewSpouseForm ? "Cancelar nueva persona" : `➕ Crear nueva pareja`}
+                        </button>
+                    </div>
+                )}
+
+                {/* ── Formulario de nueva persona ── */}
+                {(!isParent && !isSpouse) || (isParent && showNewForm) || (isSpouse && showNewSpouseForm) ? (
                     <>
-                        {/* Género */}
                         <div className="modal-field-row">
                             {[
                                 { value: "male", label: "Hombre" },
@@ -486,7 +485,6 @@ export default function AddRelativeModal({
                             ))}
                         </div>
 
-                        {/* Prefijo + Nombre + Sufijo */}
                         <div className="modal-field-row">
                             <div className="modal-field modal-field--sm">
                                 <label className="modal-label">Prefijo</label>
@@ -502,7 +500,6 @@ export default function AddRelativeModal({
                             </div>
                         </div>
 
-                        {/* Apellidos */}
                         <div className="modal-field-row">
                             <div className="modal-field">
                                 <label className="modal-label">
@@ -526,7 +523,6 @@ export default function AddRelativeModal({
                             </div>
                         )}
 
-                        {/* Fecha de nacimiento */}
                         <DateFields
                             label="Fecha de nacimiento"
                             precision={birthPrec} onPrecision={setBirthPrec}
@@ -535,7 +531,6 @@ export default function AddRelativeModal({
                             year={birthYear} onYear={setBirthYear}
                         />
 
-                        {/* Lugar de nacimiento */}
                         <div className="modal-field-row">
                             <div className="modal-field modal-field--full">
                                 <label className="modal-label">Lugar de nacimiento</label>
@@ -543,7 +538,6 @@ export default function AddRelativeModal({
                             </div>
                         </div>
 
-                        {/* Vivo / Fallecido */}
                         <div className="modal-field-row">
                             <label className="modal-radio-label">
                                 <input type="radio" name="isAlive" checked={isAlive} onChange={() => setIsAlive(true)} />
@@ -555,7 +549,6 @@ export default function AddRelativeModal({
                             </label>
                         </div>
 
-                        {/* Campos de fallecimiento */}
                         {!isAlive && (
                             <>
                                 <DateFields
@@ -584,7 +577,6 @@ export default function AddRelativeModal({
                             </>
                         )}
 
-                        {/* Selector de otro progenitor (solo hijo/hija) */}
                         {isChild && (
                             <div className="modal-field-row">
                                 <div className="modal-field modal-field--full">
@@ -616,22 +608,26 @@ export default function AddRelativeModal({
                                 </div>
                             </div>
                         )}
+                    </>
+                ) : null}
 
-                        {/* Campos de matrimonio (solo spouse) */}
-                        {isSpouse && (
+                {/* Tipo de relación y fechas — visible cuando hay persona seleccionada o formulario abierto */}
+                {isSpouse && (selectedExistingSpouse || showNewSpouseForm) && (
+                    <>
+                        <div className="modal-field-row">
+                            <div className="modal-field modal-field--full">
+                                <label className="modal-label">Tipo de relación</label>
+                                <select className="form-select" value={spouseType} onChange={(e) => setSpouseType(e.target.value)}>
+                                    {SPOUSE_TYPES.map((t) => (
+                                        <option key={t.value} value={t.value}>{t.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        {spouseType !== "co_parent" && (
                             <>
-                                <div className="modal-field-row">
-                                    <div className="modal-field modal-field--full">
-                                        <label className="modal-label">Relación</label>
-                                        <select className="form-select" value={spouseType} onChange={(e) => setSpouseType(e.target.value)}>
-                                            {SPOUSE_TYPES.map((t) => (
-                                                <option key={t.value} value={t.value}>{t.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
                                 <DateFields
-                                    label="Fecha de matrimonio"
+                                    label={dateLabel}
                                     precision={marriagePrec} onPrecision={setMarriagePrec}
                                     day={marriageDay} onDay={setMarriageDay}
                                     month={marriageMonth} onMonth={setMarriageMonth}
@@ -639,7 +635,7 @@ export default function AddRelativeModal({
                                 />
                                 <div className="modal-field-row">
                                     <div className="modal-field modal-field--full">
-                                        <label className="modal-label">Lugar de matrimonio</label>
+                                        <label className="modal-label">{placeLabel}</label>
                                         <input className="form-input" type="text" value={marriagePlace} onChange={(e) => setMarriagePlace(e.target.value)} placeholder="Ciudad, País..." />
                                     </div>
                                 </div>
@@ -648,15 +644,10 @@ export default function AddRelativeModal({
                     </>
                 )}
 
-                {/* Botones */}
                 <div className="modal-actions">
                     <div className="modal-actions-right">
                         <button className="btn-secondary" onClick={onClose} disabled={saving}>Cancelar</button>
-                        <button
-                            className="btn-primary"
-                            onClick={handleSave}
-                            disabled={saving || (isParent && !selectedExistingParent && !showNewForm)}
-                        >
+                        <button className="btn-primary" onClick={handleSave} disabled={okDisabled}>
                             {saving ? "Guardando..." : "OK"}
                         </button>
                     </div>
