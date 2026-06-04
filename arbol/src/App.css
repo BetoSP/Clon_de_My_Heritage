@@ -1036,3 +1036,24 @@
   width: 48px;
   height: 48px;
 }
+
+/* ── Context bar ───────────────────────────────────────────────────────── */
+.context-bar__clear-focus {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 2px var(--spacing-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-danger-border);
+  background: none;
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.context-bar__clear-focus:hover {
+  background: var(--color-danger-light);
+}

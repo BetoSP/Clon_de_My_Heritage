@@ -29,7 +29,8 @@ export async function addRelationship({
   let a = person_a_id;
   let b = person_b_id;
 
-  if (type === "spouse") {
+  // Orden canónico para vínculos de pareja: min_id → max_id
+  if (type === "spouse" || type === "co_parent") {
     a = Math.min(person_a_id, person_b_id);
     b = Math.max(person_a_id, person_b_id);
   }
@@ -82,11 +83,11 @@ export async function deleteRelationship(id) {
 }
 
 export async function dissolveRelationship(id, until_year) {
+  // Sin filtro de tipo — funciona para spouse y co_parent
   const { error } = await supabase
     .from("relationships")
     .update({ until_year })
-    .eq("id", id)
-    .eq("type", "spouse");
+    .eq("id", id);
 
   if (error) throw error;
 }

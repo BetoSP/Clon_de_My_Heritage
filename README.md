@@ -1,67 +1,151 @@
-# MyHeritage Clone
+# Módulo Árbol Genealógico — Galicia Migrante
 
 ## 📌 Descripción
 
-Aplicación web para construir árboles genealógicos complejos con soporte para múltiples tipos de relaciones familiares (biológicas, adoptivas y relaciones temporales entre personas).
+Módulo genealógico profesional para construir, visualizar y explorar árboles familiares complejos. Diseñado para estar a la altura de las soluciones más avanzadas del mercado (MyHeritage, FamilySearch, Ancestry) con el objetivo de superarlas.
 
-Permite representar estructuras familiares reales usando un modelo basado en grafos.
+Este módulo es el **corazón emocional** del ecosistema Galicia Migrante — el primer módulo en nacer y el que sienta las bases técnicas compartidas del portal.
+
+---
+
+## 🌐 Contexto del ecosistema
+
+```
+galicia-migrante/
+├── portal/              ← compartido por todos los módulos
+│   ├── auth/            ← autenticación (creado por este módulo)
+│   ├── design-system/   ← variables CSS, tipografía, colores
+│   ├── payments/        ← planes, límites, feature flags
+│   └── i18n/            ← textos en es/gl/en
+├── modulos/
+│   ├── arbol/           ← ESTE MÓDULO
+│   ├── territorio/      ← Tu lugar en Galicia (futuro)
+│   ├── comunidad/       ← Asociaciones, micrositios (futuro)
+│   └── ...
+```
+
+El módulo se desarrolla de forma independiente hasta madurez completa. Al integrarse al portal expone un único componente raíz:
+
+```jsx
+<ArbolGenealogico user={user} plan={plan} />
+```
+
+---
+
+## 🎯 Objetivo
+
+Construir el módulo genealógico más completo, eficiente y profesional posible. Cada decisión de arquitectura está tomada con escala de miles de registros en cientos de árboles en mente desde el primer día.
 
 ---
 
 ## ⚙️ Stack tecnológico
 
-- React
-- Vite
-- Tailwind CSS
+- React + Vite
+- CSS Variables (design system compatible con portal futuro)
 - Supabase (PostgreSQL)
-
----
-
-## 🧠 Objetivo
-
-Construir un sistema de árbol genealógico avanzado tipo MyHeritage con visualización interactiva basada en grafos.
+- GitHub: https://github.com/BetoSP/Clon_de_My_Heritage (branch: master)
 
 ---
 
 ## 🧩 Modelo del sistema
 
-El sistema se basa en un grafo genealógico:
+```
+people        → nodos base (personas)
+relationships → edges base (relaciones)
+union nodes   → nodos derivados en runtime (vínculos de pareja)
+child_of      → edges derivados cuando ambos padres son pareja
+derived_relationships → tabla de relaciones precalculadas (pendiente)
+```
 
-- people → nodos (personas)
-- relationships → edges (relaciones entre personas)
-- union nodes → representación lógica de parejas/matrimonios
-
-Supabase es la única fuente de verdad.
-El frontend solo transforma y visualiza datos.
-
----
-
-## 🗄️ Modelo de relaciones (actual)
-
-Esquema real utilizado por el sistema:
-
-- person_a_id
-- person_b_id
-- type
-- since_year
-- until_year
+Supabase es la única fuente de verdad. El frontend solo transforma y visualiza.
 
 ---
 
-## 🚧 Estado actual
+## 🗄️ Tipos de relación
 
-Sistema en desarrollo activo con backend en Supabase y frontend en React.
+### Vínculos de pareja (COUPLE_TYPES — generan union nodes)
+```
+married, partner, co_parent, separated, divorced, widowed, unknown
+```
 
-Funcional:
-- CRUD de personas (`people`)
-- Sistema de creación de relaciones entre personas basado en grafo
-- Persistencia en Supabase
+### Vínculos parentales (PARENT_TYPES — establecen jerarquía)
+```
+father, mother,
+adoptive_father, adoptive_mother,
+stepfather, stepmother,
+foster_father, foster_mother
+```
 
-Pendiente:
-- Visualización del árbol genealógico
-- Motor de construcción del grafo familiar
-- Layout de posicionamiento de nodos
+### Fraternales
+```
+brother, sister
+```
+
+---
+
+## ⚙️ Estado funcional actual
+
+✔ CRUD completo de personas y relaciones
+✔ Motor de grafo (buildFamilyGraph)
+✔ Layout engine bottom-up (layoutFamilyGraph)
+✔ Visualización SVG con pan & zoom
+✔ Nodos fantasma para agregar familiares
+✔ Buscador de personas existentes (padre, madre, cónyuge)
+✔ Tipos de vínculo de pareja explícitos
+✔ Foco por subgrafo via RPC get_subgraph
+✔ Design system con variables CSS
 
 ---
 
 ## 📁 Estructura del proyecto
+
+```
+src/
+├── components/
+│   ├── GraphView.jsx         — canvas SVG, pan/zoom, nodos, edges
+│   ├── PersonModal.jsx       — modal editar/crear persona
+│   ├── AddRelativeModal.jsx  — modal agregar familiar
+│   ├── RelationshipModal.jsx — modal editar relaciones
+│   ├── TopNavBar.jsx         — (mover a portal/ al integrar)
+│   ├── TreeContextBar.jsx
+│   └── TreeControlPanel.jsx
+├── graph/
+│   ├── buildFamilyGraph.js   — transforma datos en grafo
+│   ├── layoutFamilyGraph.js  — algoritmo de layout
+│   ├── geometry.js           — constantes dimensionales
+│   └── relationshipTypes.js  — tipos de relación
+├── services/
+│   ├── peopleService.js
+│   └── relationshipService.js
+├── lib/
+│   └── supabase.js
+├── App.jsx
+├── App.css
+└── index.css                 — design system (variables CSS)
+```
+
+---
+
+## 📚 Documentación interna
+
+- `DECISIONS.md` — decisiones de arquitectura tomadas
+- `ENGINE_RULES.md` — reglas del motor de grafo
+- `PROJECT_CONTEXT.md` — estado actual y esquema de DB
+- `LEGADO_FUTURO.md` — deuda técnica y funcionalidades pendientes
+- `CLAUDE.md` — instrucciones base para Claude Code
+
+---
+
+## 🚀 Instalación local
+
+```powershell
+cd arbol
+npm install
+npm run dev
+```
+
+Crear `arbol/.env`:
+```env
+VITE_SUPABASE_URL=tu_url
+VITE_SUPABASE_KEY=tu_key
+```

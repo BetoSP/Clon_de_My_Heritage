@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import GraphView from "./components/GraphView";
 import TopNavBar from "./components/TopNavBar";
 import TreeContextBar from "./components/TreeContextBar";
@@ -25,6 +25,9 @@ export default function App() {
   const [modalRelacion, setModalRelacion] = useState(null);
   const [modalAddRelative, setModalAddRelative] = useState(null);
 
+  const focusInitialized = useRef(false);
+  const focusWasCleared = useRef(false);
+
   const loadData = useCallback(async () => {
     try {
       if (focusPersonId) {
@@ -49,6 +52,13 @@ export default function App() {
         ]);
         setPeople(peopleData);
         setRelationships(relsData);
+
+        if (!focusInitialized.current && !focusWasCleared.current && peopleData.length > 0) {
+          focusInitialized.current = true;
+          setFocusPersonId(String(peopleData[0].id));
+          return;
+        }
+        focusInitialized.current = true;
       }
     } catch (error) {
       console.error(error);
@@ -66,7 +76,7 @@ export default function App() {
     const fromPerson = people.find((p) => String(p.id) === String(fromPersonId));
     if (!fromPerson) return { surname1: "", surname2: "" };
     const spouseRel = relationships.find(
-      (r) => r.type === "spouse" && (
+      (r) => (r.type === "spouse" || r.type === "co_parent") && (
         String(r.person_a_id) === String(fromPersonId) ||
         String(r.person_b_id) === String(fromPersonId)
       )
@@ -95,7 +105,7 @@ export default function App() {
     const existingParent = people.find((p) => String(p.id) === String(existingParentRel.person_a_id));
     if (!existingParent) return null;
     const spouseRel = relationships.find(
-      (r) => r.type === "spouse" && (
+      (r) => (r.type === "spouse" || r.type === "co_parent") && (
         String(r.person_a_id) === String(existingParent.id) ||
         String(r.person_b_id) === String(existingParent.id)
       )
@@ -170,13 +180,13 @@ export default function App() {
       if (slotType === "spouse" || slotType === "spouse_another") {
         if (slotType === "spouse") {
           const existingSpouse = relationships.find(
-            (r) => r.type === "spouse" && (
+            (r) => (r.type === "spouse" || r.type === "co_parent") && (
               String(r.person_a_id) === String(fromPersonId) ||
               String(r.person_b_id) === String(fromPersonId)
             )
           );
           if (existingSpouse) {
-            alert("Esta persona ya tiene un cónyuge activo. Usá 'Agregar otra pareja'.");
+            alert("Esta persona ya tiene una pareja activa. Usá 'Agregar otra pareja'.");
             setModalAddRelative(null);
             return;
           }
@@ -205,13 +215,12 @@ export default function App() {
         }
       }
 
-      // Persona existente elegida — padre, madre o cónyuge
       if (existingPersonId) {
         if (slotType === "spouse" || slotType === "spouse_another") {
           await addRelationship({
             person_a_id: Number(fromPersonId),
             person_b_id: Number(existingPersonId),
-            type: "spouse",
+            type: relationship?.type ?? "spouse",
             marriage_day: relationship?.marriage_day ?? null,
             marriage_month: relationship?.marriage_month ?? null,
             marriage_year: relationship?.marriage_year ?? null,
@@ -273,7 +282,7 @@ export default function App() {
         await addRelationship({
           person_a_id: Number(fromPersonId),
           person_b_id: newPerson.id,
-          type: "spouse",
+          type: relationship?.type ?? "spouse",
           marriage_day: relationship.marriage_day,
           marriage_month: relationship.marriage_month,
           marriage_year: relationship.marriage_year,
@@ -326,11 +335,12 @@ export default function App() {
   }
 
   function handleFocusPerson(nodeId) {
-    setFocusPersonId(nodeId);
+    setFocusPersonId(String(nodeId));
     setSelectedNodeId(null);
   }
 
   function handleClearFocus() {
+    focusWasCleared.current = true;
     setFocusPersonId(null);
   }
 
@@ -349,11 +359,12 @@ export default function App() {
     ? getSuggestedSurnames(modalAddRelative.fromPersonId)
     : { surname1: "", surname2: "" };
 
+  // Incluye co_parent como opción de otro progenitor
   const addRelativeOtherParentOptions = modalAddRelative &&
     (modalAddRelative.slotType === "son" || modalAddRelative.slotType === "daughter")
     ? (() => {
       const spouseRels = relationships.filter(
-        (r) => r.type === "spouse" && (
+        (r) => (r.type === "spouse" || r.type === "co_parent") && (
           String(r.person_a_id) === String(modalAddRelative.fromPersonId) ||
           String(r.person_b_id) === String(modalAddRelative.fromPersonId)
         )
@@ -382,7 +393,6 @@ export default function App() {
     ? getDefaultParentSuggestion(modalAddRelative.fromPersonId, modalAddRelative.slotType)
     : null;
 
-  // Candidatos para cónyuge — todas las personas excepto la persona actual
   const addRelativeSpouseCandidates = modalAddRelative &&
     (modalAddRelative.slotType === "spouse" || modalAddRelative.slotType === "spouse_another")
     ? people.filter((p) => String(p.id) !== String(modalAddRelative.fromPersonId))
@@ -425,7 +435,7 @@ export default function App() {
           onSelectNode={handleSelectNode}
           onAddRelative={handleAddRelativeFromNode}
           onEditPerson={handleEditPerson}
-          onDeletePerson={handleEditPerson}
+          onDeletePerson={handleDeletePersona}
           onFocusPerson={handleFocusPerson}
           searchQuery={searchQuery}
         />

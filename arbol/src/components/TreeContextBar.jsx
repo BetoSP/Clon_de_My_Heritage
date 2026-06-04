@@ -4,17 +4,20 @@ export default function TreeContextBar({
   totalPersons,
   renderedPersons,
   onOpenFocusPerson,
+  onClearFocus,
 }) {
   return (
     <div className="context-bar">
 
-      <button
-        className="context-bar__focus-btn"
-        onClick={onOpenFocusPerson}
-        title="Abrir ficha de la persona foco"
-      >
-        ›
-      </button>
+      {focusPerson && (
+        <button
+          className="context-bar__focus-btn"
+          onClick={onOpenFocusPerson}
+          title="Abrir ficha de la persona foco"
+        >
+          ›
+        </button>
+      )}
 
       <div className="context-bar__breadcrumb">
         {treeOwner && (
@@ -31,12 +34,25 @@ export default function TreeContextBar({
             Foco: {focusPerson}
           </span>
         )}
+        {!focusPerson && (
+          <span className="context-bar__tree-label">Vista completa</span>
+        )}
       </div>
 
       {totalPersons != null && (
         <span className="context-bar__count">
           <strong>{renderedPersons ?? "–"}</strong> de <strong>{totalPersons}</strong> personas
         </span>
+      )}
+
+      {focusPerson && onClearFocus && (
+        <button
+          className="context-bar__clear-focus"
+          onClick={onClearFocus}
+          title="Limpiar foco — ver árbol completo"
+        >
+          ✕ Limpiar foco
+        </button>
       )}
 
     </div>
