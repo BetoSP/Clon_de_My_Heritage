@@ -355,6 +355,21 @@ CREATE TABLE derived_relationships (
 
 ---
 
+## [031] Display de apellidos en nodos del grafo
+
+**Decisión:** en el nodo visual, los apellidos se muestran con lógica distinta a `surnames` del DB:
+- Si existe `surname_1` → mostrar `surname_1 + " " + surname_2` (ignorar `surname_married`)
+- Si no hay `surname_1` pero hay `surname_married` → mostrar `de surname_married`
+- Ninguno → no mostrar línea de apellidos
+
+**Razón:** el campo DB `surnames` incluye `"de [casada]"` para mujeres (útil para búsquedas y nombre completo), pero en el nodo el espacio es limitado y mostrar el apellido de casada junto a los de origen genera líneas muy largas. La información completa sigue disponible en el campo `people.surnames`.
+
+**Implementación:** calculado en `buildFamilyGraph.js` (`node.data.surnames`), distinto de `person.surnames` (campo DB).
+
+**Tipografía:** nombre y apellidos usan las mismas variables CSS (`--node-font-name`, `--node-text-name`) y el mismo peso (`fontWeight="700"`). Decisión del usuario — contradice el spec inicial del Prompt 003 que pedía "sin negrita".
+
+---
+
 ## 📌 Regla general del archivo
 
 Este archivo contiene únicamente decisiones técnicas ya tomadas o en proceso de implementación.

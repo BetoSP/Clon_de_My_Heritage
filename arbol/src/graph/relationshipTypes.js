@@ -1,9 +1,23 @@
 // Single source of truth for all relationship type definitions.
 //
 // To add a new relationship type:
-//   1. Add it to PARENT_TYPES if es parent-child (establece jerarquía generacional).
-//   2. Add it to COUPLE_TYPES si es vínculo entre adultos al mismo nivel que spouse.
+//   1. Add it to COUPLE_TYPES if es vínculo entre adultos al mismo nivel generacional.
+//   2. Add it to PARENT_TYPES if establece jerarquía generacional.
 //   3. No other files need to change.
+
+// ── Couple types ───────────────────────────────────────────────────────────
+// Vínculos entre adultos al mismo nivel generacional.
+// El layout los trata igual para posicionamiento — generan union nodes.
+// Valores válidos en DB: married, partner, co_parent, separated, divorced, widowed, unknown
+export const COUPLE_TYPES = new Set([
+  "married",
+  "partner",
+  "co_parent",
+  "separated",
+  "divorced",
+  "widowed",
+  "unknown",
+]);
 
 // ── Parent-child types ─────────────────────────────────────────────────────
 // Semantic: person_a = the parent / role-holder
@@ -11,14 +25,12 @@
 export const PARENT_TYPES = new Set([
   "father",
   "mother",
-]);
-
-// ── Couple types ───────────────────────────────────────────────────────────
-// Vínculos entre adultos al mismo nivel generacional.
-// El layout los trata igual que spouse para posicionamiento.
-export const COUPLE_TYPES = new Set([
-  "spouse",
-  "co_parent",
+  "adoptive_father",
+  "adoptive_mother",
+  "stepfather",
+  "stepmother",
+  "foster_father",
+  "foster_mother",
 ]);
 
 // Edge types that establish generational hierarchy for the layout engine.

@@ -168,3 +168,33 @@ Advertir sobre cualquier parte del sistema que pueda verse afectada.
 - El cambio implementa en el módulo algo que debería estar en `portal/`
 - Hay ambigüedad sobre qué comportamiento es el correcto
 - El cambio podría romper datos existentes en la DB
+
+---
+
+## 📊 REGISTRO DE TOKENS — OBLIGATORIO en cada prompt
+
+Al finalizar CADA prompt ejecutado, crear un archivo en `prompts/token_logs/` con el nombre `TOKEN_LOG_[nombre_del_prompt].md` usando esta estructura:
+
+```markdown
+# Token Log — [NOMBRE DEL PROMPT]
+**Prompt:** [nombre del archivo]
+**Fecha:** [fecha y hora]
+
+## Desglose de tokens
+
+| Fase | Descripción | Tokens |
+|------|-------------|--------|
+| Lectura de documentación | Archivos .md leídos | |
+| Lectura de código fuente | Archivos .js/.jsx leídos | |
+| Análisis / thinking | Diagnóstico y planificación | |
+| Escritura de cambios | Ediciones ejecutadas | |
+| Reporte final | Resumen post-ejecución | |
+| **TOTAL** | | |
+
+## Notas
+- Qué fue lo más costoso:
+- Archivos más grandes leídos:
+- Observaciones:
+```
+
+Los números de tokens se toman de los contadores que Claude Code muestra en pantalla durante la ejecución. Si un valor no está disponible, anotar "n/d".

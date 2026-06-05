@@ -77,6 +77,32 @@ Para búsquedas eficientes a escala, estas relaciones se precalculan en `derived
 
 ---
 
+## Reglas del subgrafo
+
+El subgrafo de una persona foco contiene:
+
+| Quién | ¿Incluido? |
+|-------|-----------|
+| Foco | ✓ Siempre |
+| Ancestros directos del foco (padres, abuelos…) | ✓ Hasta el límite de generaciones |
+| Descendientes directos del foco (hijos, nietos…) | ✓ Hasta el límite de generaciones |
+| Hermanos del foco (otros hijos de los mismos padres) | ✓ Un nivel |
+| Parejas de CUALQUIER nodo del subgrafo | ✓ Como nodos — entran al subgrafo |
+| Ancestros de esas parejas | ✗ NO — tienen su propio subgrafo |
+
+**Regla cardinal — parejas sin linaje:**
+Las parejas de cualquier nodo del subgrafo SE INCLUYEN como nodos. Los ancestros de esas parejas NO SE INCLUYEN — tienen su propio subgrafo al que se accede mediante el badge de vinculación.
+
+**Ejemplo:**
+Si Antonio es el foco y está casado con Dolores → Dolores aparece en el árbol de Antonio. Pero los padres y abuelos de Dolores NO aparecen en el árbol de Antonio — solo se ven cuando Dolores es el foco.
+
+Esta regla aplica a **todas** las parejas de **todos** los nodos del subgrafo: foco, ancestros, descendientes y hermanos.
+
+**Implementación:**
+La función SQL `get_subgraph` aplica esta regla excluyendo del resultado a cualquier persona que sea progenitor de una pareja que no pertenece al linaje directo del foco.
+
+---
+
 ## Prohibiciones
 
 - NO inferir jerarquía visual en backend

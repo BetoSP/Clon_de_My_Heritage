@@ -8,6 +8,7 @@ const SPOUSE_TYPES = [
     { value: "co_parent", label: "Co-padres (sin vínculo formal)" },
     { value: "separated", label: "Separado/a" },
     { value: "divorced", label: "Divorciado/a" },
+    { value: "widowed", label: "Viudo/a" },
     { value: "unknown", label: "Desconocido" },
 ];
 
@@ -305,16 +306,14 @@ export default function AddRelativeModal({
         // Cónyuge con persona existente
         if (isSpouse && selectedExistingSpouse && !showNewSpouseForm) {
             setSaving(true);
-            const relType = spouseType === "co_parent" ? "co_parent" : "spouse";
             onSave({
                 existingPersonId: selectedExistingSpouse.id,
                 relationship: {
-                    type: relType,
+                    type: spouseType,
                     marriage_day: marriageDay ? Number(marriageDay) : null,
                     marriage_month: marriageMonth ? Number(marriageMonth) : null,
                     marriage_year: marriageYear ? Number(marriageYear) : null,
                     marriage_place: marriagePlace.trim() || null,
-                    notes: spouseType !== "married" && spouseType !== "co_parent" ? spouseType : null,
                 },
             });
             return;
@@ -353,14 +352,12 @@ export default function AddRelativeModal({
 
         let relationship;
         if (isSpouse) {
-            const relType = spouseType === "co_parent" ? "co_parent" : "spouse";
             relationship = {
-                type: relType,
+                type: spouseType,
                 marriage_day: marriageDay ? Number(marriageDay) : null,
                 marriage_month: marriageMonth ? Number(marriageMonth) : null,
                 marriage_year: marriageYear ? Number(marriageYear) : null,
                 marriage_place: marriagePlace.trim() || null,
-                notes: spouseType !== "married" && spouseType !== "co_parent" ? spouseType : null,
             };
         } else if (isChild) {
             if (otherParentChoice === "new" && newParentData?.nombre?.trim()) {

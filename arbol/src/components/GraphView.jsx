@@ -1,5 +1,6 @@
 import { useEffect, useRef, useMemo, useState, useCallback } from "react";
 import { layoutFamilyGraph } from "../graph/layoutFamilyGraph.js";
+import { COUPLE_TYPES } from "../graph/relationshipTypes.js";
 import {
   PERSON_W, PERSON_H,
   AVATAR_CX, AVATAR_CY, AVATAR_R, TEXT_X,
@@ -53,7 +54,7 @@ function getVacantSlots(nodeId, edges, nodes) {
   const hasFather = edges.some((e) => e.target === nodeId && e.type === "father");
   const hasMother = edges.some((e) => e.target === nodeId && e.type === "mother");
   const hasSpouse = edges.some((e) =>
-    (e.type === "spouse" || e.type === "co_parent") && (
+    COUPLE_TYPES.has(e.type) && (
       e.source === nodeId ||
       nodes.filter((n) => n.type === "union").some((u) =>
         u.id === e.target &&
@@ -90,7 +91,7 @@ function GhostNode({ x, y, label, isFemale, onClick }) {
   );
 }
 
-function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, hasExternalTree, onSelect, onAddRelative, onEditPerson, onFocusPerson }) {
+function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, onSelect, onAddRelative, onEditPerson, onFocusPerson }) {
   const { x, y } = node;
   const isMale = node.data.gender === "male";
 
@@ -104,7 +105,13 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, hasE
     return n.length > NODE_NAME_MAX_CHARS ? n.slice(0, NODE_NAME_MAX_CHARS - 1) + "…" : n;
   })();
 
-  const dates = node.data.birth_year ? String(node.data.birth_year) : "?";
+  const surnames = (() => {
+    const s = node.data.surnames ?? null;
+    if (!s) return null;
+    return s.length > NODE_NAME_MAX_CHARS ? s.slice(0, NODE_NAME_MAX_CHARS - 1) + "…" : s;
+  })();
+
+  const dates = node.data.birth_year ? String(node.data.birth_year) : null;
 
   const badgeCX = x + NODE_BADGE_DX;
   const badgeCY = y + NODE_BADGE_DY;
@@ -122,8 +129,9 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, hasE
       <rect x={x} y={y} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill={bgColor} stroke={borderColor} strokeWidth={sw} />
       <line x1={x + NODE_ACCENT_X} y1={y + NODE_ACCENT_TOP} x2={x + NODE_ACCENT_X} y2={y + PERSON_H - NODE_ACCENT_TOP} stroke={accentColor} strokeWidth={NODE_ACCENT_W} strokeLinecap="round" />
       <PersonAvatar cx={x + AVATAR_CX} cy={y + AVATAR_CY} r={AVATAR_R} />
-      <text x={x + TEXT_X} y={y + 22} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" fontFamily="system-ui, sans-serif">{name}</text>
-      <text x={x + TEXT_X} y={y + 38} fontSize="var(--node-font-date)" fill="var(--node-text-date)">{dates}</text>
+      <text x={x + TEXT_X} y={y + 20} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" fontFamily="system-ui, sans-serif">{name}</text>
+      {surnames && <text x={x + TEXT_X} y={y + 33} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" fontFamily="system-ui, sans-serif">{surnames}</text>}
+      {dates && <text x={x + TEXT_X} y={y + 46} fontSize="var(--node-font-date)" fill="var(--node-text-date)">{dates}</text>}
 
       {unionCount > 1 && (
         <g>
@@ -132,7 +140,7 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, hasE
         </g>
       )}
 
-      {!isGhostActive && hasExternalTree && (
+      {!isGhostActive && (node.data.hasHiddenParents || unionCount > 1) && !isFocus && (
         <g onClick={(e) => { e.stopPropagation(); onFocusPerson(node.id); }} style={{ cursor: "pointer" }}>
           <circle cx={linkCX} cy={linkCY} r={NODE_ICON_LINK_R} fill="var(--icon-link-bg)" stroke={accentColor} strokeWidth={1.5} />
           <use href="/icons.svg#icon-link-tree" x={linkCX - NODE_ICON_SIZE / 2} y={linkCY - NODE_ICON_SIZE / 2} width={NODE_ICON_SIZE} height={NODE_ICON_SIZE} stroke={accentColor} color={accentColor} />
@@ -213,10 +221,19 @@ export default function GraphView({
     const wrapper = wrapperRef.current;
     const wW = wrapper.clientWidth;
     const wH = wrapper.clientHeight;
-    const centerX = (wW - canvasW * zoom) / 2;
-    const centerY = (wH - canvasH * zoom) / 2;
-    setPan({ x: centerX, y: centerY });
-  }, [layout.nodes.length, canvasW, canvasH]);
+
+    if (focusNodeId) {
+      const focusNode = layout.nodes.find((n) => n.id === String(focusNodeId));
+      if (focusNode) {
+        const nodeCX = CANVAS_PADDING + focusNode.x + PERSON_W / 2;
+        const nodeCY = CANVAS_PADDING + focusNode.y + PERSON_H / 2;
+        setPan({ x: wW / 2 - nodeCX * zoom, y: wH / 2 - nodeCY * zoom });
+        return;
+      }
+    }
+
+    setPan({ x: (wW - canvasW * zoom) / 2, y: (wH - canvasH * zoom) / 2 });
+  }, [focusNodeId, layout.nodes.length, canvasW, canvasH]);
 
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return;
@@ -304,27 +321,15 @@ export default function GraphView({
     return count;
   }, [layout.nodes]);
 
-  // ── Personas que son "secundarias" en su grupo (cónyuge externo) ──────────
-  // Estas son las que el layout posiciona a la derecha de su pareja principal
-  const personHasAncestors = useMemo(() => {
-    const result = new Set();
-    for (const edge of layout.edges) {
-      if (edge.type === "father" || edge.type === "mother" || edge.type === "child_of") {
-        result.add(edge.target);
-      }
+  function handleNodeSelect(nodeId) {
+    const clickedNode = nodeMap.get(nodeId);
+    if (clickedNode && wrapperRef.current) {
+      const wrapper = wrapperRef.current;
+      const nodeCX = CANVAS_PADDING + clickedNode.x + PERSON_W / 2;
+      const nodeCY = CANVAS_PADDING + clickedNode.y + PERSON_H / 2;
+      setPan({ x: wrapper.clientWidth / 2 - nodeCX * zoom, y: wrapper.clientHeight / 2 - nodeCY * zoom });
     }
-    return result;
-  }, [layout.edges]);
-
-  // ── hasExternalTree: mostrar simbolito cuando la persona es cónyuge ───────
-  // Regla: mostrar en cualquier persona que participa en un union node
-  // EXCEPTO si es la persona principal del árbol actual (focusNodeId)
-  // y EXCEPTO si no tiene ningún ancestro ni está en ningún union (persona suelta sin vínculos)
-  function computeHasExternalTree(node) {
-    const unions = personUnionCount.get(node.id) ?? 0;
-    if (unions === 0) return false; // no tiene pareja — no mostrar
-    if (node.id === String(focusNodeId)) return false; // es el foco actual
-    return true; // tiene al menos una pareja — mostrar simbolito
+    onSelectNode?.(nodeId);
   }
 
   const activeNode = activeGhostNodeId ? nodeMap.get(activeGhostNodeId) : null;
@@ -374,23 +379,22 @@ export default function GraphView({
                     const tgt = nodeMap.get(edge.target);
                     if (!src || !tgt) return null;
                     const d = edgePath(src, tgt);
-                    const isSpouse = edge.type === "spouse";
+                    const isCouple = COUPLE_TYPES.has(edge.type);
                     const isCoParent = edge.type === "co_parent";
-                    const dissolved = edge.until_year !== null;
+                    const isDissolved = ["separated", "divorced", "widowed"].includes(edge.type) || edge.until_year !== null;
+                    const edgeStroke = isCoParent
+                      ? "var(--edge-color-co-parent)"
+                      : isDissolved
+                        ? "var(--edge-color-dissolved)"
+                        : isCouple
+                          ? "var(--edge-color-spouse)"
+                          : "var(--edge-color-parent)";
+                    const edgeDash = isCoParent ? "6,4" : isDissolved ? "5,3" : undefined;
                     return (
                       <path key={edge.id} d={d} fill="none"
-                        stroke={
-                          isCoParent
-                            ? "var(--edge-color-co-parent)"
-                            : isSpouse
-                              ? (dissolved ? "var(--edge-color-dissolved)" : "var(--edge-color-spouse)")
-                              : "var(--edge-color-parent)"
-                        }
-                        strokeWidth={isSpouse || isCoParent ? EDGE_STROKE_SPOUSE : EDGE_STROKE_PARENT}
-                        strokeDasharray={
-                          isCoParent ? "6,4" :
-                            isSpouse && dissolved ? "5,3" : undefined
-                        }
+                        stroke={edgeStroke}
+                        strokeWidth={isCouple ? EDGE_STROKE_SPOUSE : EDGE_STROKE_PARENT}
+                        strokeDasharray={edgeDash}
                         strokeLinecap="round" strokeLinejoin="round"
                         strokeOpacity={activeGhostNodeId ? 0.08 : 0.8}
                       />
@@ -405,8 +409,7 @@ export default function GraphView({
                         isFocus={focusNodeId === node.id}
                         isGhostActive={activeGhostNodeId === node.id}
                         unionCount={personUnionCount.get(node.id) ?? 0}
-                        hasExternalTree={computeHasExternalTree(node)}
-                        onSelect={onSelectNode ?? (() => { })}
+                        onSelect={handleNodeSelect}
                         onAddRelative={handleAddRelative}
                         onEditPerson={onEditPerson ?? (() => { })}
                         onFocusPerson={onFocusPerson ?? (() => { })}
@@ -438,7 +441,6 @@ export default function GraphView({
                         isFocus={false}
                         isGhostActive={true}
                         unionCount={0}
-                        hasExternalTree={false}
                         onSelect={() => { }}
                         onAddRelative={() => { }}
                         onEditPerson={() => { }}

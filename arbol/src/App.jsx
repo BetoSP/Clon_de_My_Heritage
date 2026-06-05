@@ -9,6 +9,8 @@ import AddRelativeModal from "./components/AddRelativeModal";
 import { fetchPeople, fetchPeopleByIds, addPerson, updatePerson, deletePerson } from "./services/peopleService";
 import { fetchRelationships, fetchRelationshipsByPersonIds, dissolveRelationship, addRelationship, updateRelationship, deleteRelationship } from "./services/relationshipService";
 import { buildFamilyGraph } from "./graph/buildFamilyGraph.js";
+import { COUPLE_TYPES } from "./graph/relationshipTypes.js";
+import { computeDisplaySurnames } from "./utils/personUtils.js";
 import { supabase } from "./lib/supabase.js";
 import "./App.css";
 
@@ -76,7 +78,7 @@ export default function App() {
     const fromPerson = people.find((p) => String(p.id) === String(fromPersonId));
     if (!fromPerson) return { surname1: "", surname2: "" };
     const spouseRel = relationships.find(
-      (r) => (r.type === "spouse" || r.type === "co_parent") && (
+      (r) => COUPLE_TYPES.has(r.type) && (
         String(r.person_a_id) === String(fromPersonId) ||
         String(r.person_b_id) === String(fromPersonId)
       )
@@ -105,7 +107,7 @@ export default function App() {
     const existingParent = people.find((p) => String(p.id) === String(existingParentRel.person_a_id));
     if (!existingParent) return null;
     const spouseRel = relationships.find(
-      (r) => (r.type === "spouse" || r.type === "co_parent") && (
+      (r) => COUPLE_TYPES.has(r.type) && (
         String(r.person_a_id) === String(existingParent.id) ||
         String(r.person_b_id) === String(existingParent.id)
       )
@@ -180,7 +182,7 @@ export default function App() {
       if (slotType === "spouse" || slotType === "spouse_another") {
         if (slotType === "spouse") {
           const existingSpouse = relationships.find(
-            (r) => (r.type === "spouse" || r.type === "co_parent") && (
+            (r) => COUPLE_TYPES.has(r.type) && (
               String(r.person_a_id) === String(fromPersonId) ||
               String(r.person_b_id) === String(fromPersonId)
             )
@@ -220,7 +222,7 @@ export default function App() {
           await addRelationship({
             person_a_id: Number(fromPersonId),
             person_b_id: Number(existingPersonId),
-            type: relationship?.type ?? "spouse",
+            type: relationship?.type ?? "married",
             marriage_day: relationship?.marriage_day ?? null,
             marriage_month: relationship?.marriage_month ?? null,
             marriage_year: relationship?.marriage_year ?? null,
@@ -282,7 +284,7 @@ export default function App() {
         await addRelationship({
           person_a_id: Number(fromPersonId),
           person_b_id: newPerson.id,
-          type: relationship?.type ?? "spouse",
+          type: relationship?.type ?? "married",
           marriage_day: relationship.marriage_day,
           marriage_month: relationship.marriage_month,
           marriage_year: relationship.marriage_year,
@@ -346,7 +348,12 @@ export default function App() {
 
   const focusPerson = people.find((p) => String(p.id) === String(focusPersonId));
   const focusPersonName = focusPerson
-    ? `${focusPerson.name} ${focusPerson.surnames ?? ""}`.trim()
+    ? `${focusPerson.name} ${computeDisplaySurnames(focusPerson) ?? ""}`.trim()
+    : null;
+
+  const selectedPerson = people.find((p) => String(p.id) === String(selectedNodeId));
+  const selectedPersonName = selectedPerson
+    ? `${selectedPerson.name} ${computeDisplaySurnames(selectedPerson) ?? ""}`.trim()
     : null;
   const personCount = graph.nodes.filter((n) => n.type === "person").length;
   const modalPersonaObj = modalPersona === "new" ? null : modalPersona?.person ?? null;
@@ -364,7 +371,7 @@ export default function App() {
     (modalAddRelative.slotType === "son" || modalAddRelative.slotType === "daughter")
     ? (() => {
       const spouseRels = relationships.filter(
-        (r) => (r.type === "spouse" || r.type === "co_parent") && (
+        (r) => COUPLE_TYPES.has(r.type) && (
           String(r.person_a_id) === String(modalAddRelative.fromPersonId) ||
           String(r.person_b_id) === String(modalAddRelative.fromPersonId)
         )
@@ -408,8 +415,9 @@ export default function App() {
       </div>
 
       <TreeContextBar
-        treeOwner={people[0]?.name ?? null}
+        treeOwner={null}
         focusPerson={focusPersonName}
+        selectedPerson={selectedPersonName}
         totalPersons={people.length}
         renderedPersons={personCount}
         onOpenFocusPerson={() => focusPersonId && setSelectedNodeId(focusPersonId)}

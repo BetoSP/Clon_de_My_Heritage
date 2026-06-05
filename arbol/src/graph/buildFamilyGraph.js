@@ -27,10 +27,21 @@
 // direct parent→child edges.
 
 import { PARENT_TYPES, COUPLE_TYPES } from "./relationshipTypes.js";
+import { computeDisplaySurnames } from "../utils/personUtils.js";
 
 export function buildFamilyGraph(people, relationships) {
   // ── Step 1: Person nodes ─────────────────────────────────────────────────
   const personNodeMap = new Map();
+
+  // Personas con progenitores en la DB que NO están en el grafo visible.
+  // Indica que la persona tiene familia fuera del subgrafo cargado.
+  const loadedIds = new Set(people.map((p) => p.id));
+  const hiddenParentIds = new Set();
+  for (const rel of relationships) {
+    if (PARENT_TYPES.has(rel.type) && !loadedIds.has(rel.person_a_id)) {
+      hiddenParentIds.add(rel.person_b_id);
+    }
+  }
 
   for (const person of people) {
     if (personNodeMap.has(person.id)) continue;
@@ -39,12 +50,13 @@ export function buildFamilyGraph(people, relationships) {
       type: "person",
       data: {
         name: person.name,
-        surnames: person.surnames ?? null,
+        surnames: computeDisplaySurnames(person),
         birth_day: person.birth_day ?? null,
         birth_month: person.birth_month ?? null,
         birth_year: person.birth_year ?? null,
         gender: person.gender,
         adopted: person.adopted ?? false,
+        hasHiddenParents: hiddenParentIds.has(person.id),
       },
     });
   }

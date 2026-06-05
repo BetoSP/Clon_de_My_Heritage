@@ -65,7 +65,7 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 | surname_1        | text        | primer apellido                   |
 | surname_2        | text        | segundo apellido                  |
 | surname_married  | text        | apellido de casada (opcional)     |
-| surnames         | text        | calculado en frontend             |
+| surnames         | text        | calculado en frontend (nombre completo con "de casada"); `node.data.surnames` usa lógica distinta — ver [031] |
 | prefix           | text        | opcional                          |
 | suffix           | text        | opcional                          |
 | birth_day        | integer     | opcional                          |

@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { COUPLE_TYPES } from "../graph/relationshipTypes.js";
 
 export async function fetchRelationships() {
   const { data, error } = await supabase
@@ -30,7 +31,7 @@ export async function addRelationship({
   let b = person_b_id;
 
   // Orden canónico para vínculos de pareja: min_id → max_id
-  if (type === "spouse" || type === "co_parent") {
+  if (COUPLE_TYPES.has(type)) {
     a = Math.min(person_a_id, person_b_id);
     b = Math.max(person_a_id, person_b_id);
   }

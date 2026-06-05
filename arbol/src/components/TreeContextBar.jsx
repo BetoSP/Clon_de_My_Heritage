@@ -1,6 +1,7 @@
 export default function TreeContextBar({
   treeOwner,
   focusPerson,
+  selectedPerson,
   totalPersons,
   renderedPersons,
   onOpenFocusPerson,
@@ -26,15 +27,14 @@ export default function TreeContextBar({
             <span className="context-bar__owner-badge">{treeOwner}</span>
           </>
         )}
-        {treeOwner && focusPerson && (
+        {treeOwner && (focusPerson || selectedPerson) && (
           <span className="context-bar__sep">›</span>
         )}
-        {focusPerson && (
-          <span className="context-bar__focus-badge">
-            Foco: {focusPerson}
-          </span>
-        )}
-        {!focusPerson && (
+        {selectedPerson ? (
+          <span className="context-bar__focus-badge">{selectedPerson}</span>
+        ) : focusPerson ? (
+          <span className="context-bar__focus-badge">Foco: {focusPerson}</span>
+        ) : (
           <span className="context-bar__tree-label">Vista completa</span>
         )}
       </div>
