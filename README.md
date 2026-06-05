@@ -86,15 +86,21 @@ brother, sister
 ## ⚙️ Estado funcional actual
 
 ✔ CRUD completo de personas y relaciones
-✔ Motor de grafo (buildFamilyGraph)
+✔ Motor de grafo (buildFamilyGraph) con hasHiddenParents para badge de vinculación
 ✔ Layout engine bottom-up (layoutFamilyGraph)
 ✔ Visualización SVG con pan & zoom
-✔ Nodos fantasma para agregar familiares — detecta todos los PARENT_TYPES (adoptive, step, foster)
+✔ Espaciado simétrico entre generaciones
+✔ Nodos fantasma — detecta todos los PARENT_TYPES (adoptive, step, foster)
 ✔ Buscador de personas existentes (padre, madre, cónyuge)
-✔ Tipos de vínculo de pareja explícitos (7 COUPLE_TYPES, 8 PARENT_TYPES)
-✔ Foco por subgrafo via RPC get_subgraph
-✔ Design system con variables CSS — todas las constantes dimensionales en geometry.js
-✔ Espaciado simétrico entre generaciones (padre→línea horizontal = línea→hijo)
+✔ 7 COUPLE_TYPES y 8 PARENT_TYPES implementados
+✔ Click en nodo → foco: centra vista + actualiza barra de contexto
+✔ Badge de vinculación con lógica correcta (hasHiddenParents || unionCount > 1)
+✔ Foco por subgrafo via RPC get_subgraph (incluye hermanos, excluye ancestros de cónyuges)
+✔ Apellidos en nodo con lógica display correcta (surname_1+2 o "de casada")
+✔ computeDisplaySurnames y computeFullSurnames en personUtils.js
+✔ Design system con variables CSS — cero valores hardcodeados
+✔ Constantes dimensionales en geometry.js
+✔ Footer minimalista
 
 ---
 
@@ -103,21 +109,24 @@ brother, sister
 ```
 src/
 ├── components/
-│   ├── GraphView.jsx         — canvas SVG, pan/zoom, nodos, edges
+│   ├── GraphView.jsx         — canvas SVG, pan/zoom, nodos, edges, badge
 │   ├── PersonModal.jsx       — modal editar/crear persona
 │   ├── AddRelativeModal.jsx  — modal agregar familiar
-│   ├── RelationshipModal.jsx — modal editar relaciones
+│   ├── RelationshipModal.jsx — modal editar relaciones (pendiente BUG-01)
 │   ├── TopNavBar.jsx         — (mover a portal/ al integrar)
-│   ├── TreeContextBar.jsx
-│   └── TreeControlPanel.jsx
+│   ├── TreeContextBar.jsx    — barra de contexto con foco y selección
+│   ├── TreeControlPanel.jsx
+│   └── FooterBar.jsx         — footer minimalista
 ├── graph/
 │   ├── buildFamilyGraph.js   — transforma datos en grafo
 │   ├── layoutFamilyGraph.js  — algoritmo de layout
 │   ├── geometry.js           — constantes dimensionales
-│   └── relationshipTypes.js  — tipos de relación
+│   └── relationshipTypes.js  — COUPLE_TYPES, PARENT_TYPES, PARENT_EDGE_TYPES
 ├── services/
 │   ├── peopleService.js
 │   └── relationshipService.js
+├── utils/
+│   └── personUtils.js        — computeDisplaySurnames, computeFullSurnames
 ├── lib/
 │   └── supabase.js
 ├── App.jsx
@@ -130,10 +139,11 @@ src/
 ## 📚 Documentación interna
 
 - `DECISIONS.md` — decisiones de arquitectura tomadas
-- `ENGINE_RULES.md` — reglas del motor de grafo
-- `PROJECT_CONTEXT.md` — estado actual y esquema de DB
-- `LEGADO_FUTURO.md` — deuda técnica y funcionalidades pendientes
+- `ENGINE_RULES.md` — reglas del motor de grafo (incluye regla cardinal del subgrafo)
+- `PROJECT_CONTEXT.md` — estado actual, esquema de DB y pendientes priorizados
+- `LEGADO_FUTURO.md` — deuda técnica, bugs conocidos y funcionalidades futuras
 - `CLAUDE.md` — instrucciones base para Claude Code
+- `myheritage.md` — referencia técnica completa de MyHeritage v3.0
 
 ---
 

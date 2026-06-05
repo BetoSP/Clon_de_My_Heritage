@@ -53,6 +53,75 @@ El slider de generaciones existe en la UI pero no tiene efecto cuando no hay foc
 
 ---
 
+## 🎨 Mejoras visuales del nodo — pendientes
+
+Basadas en especificación técnica de MyHeritage (Junio 2026). Simples de implementar, alto impacto visual.
+
+### Barra de género en nodo
+Franja vertical de 4px en el borde izquierdo del nodo, coloreada según género:
+- Variable CSS `--node-gender-bar-male` (azul `#2b6cb0`)
+- Variable CSS `--node-gender-bar-female` (rosa `#b83280`)
+- Variable CSS `--node-gender-bar-unknown` (gris `#4a5568`)
+
+Implementación: elemento SVG `rect` de 4px de ancho, altura completa del nodo, posición absoluta izquierda.
+
+### Truncado de nombre con ellipsis
+Si el nombre supera ~22 caracteres, truncar con `…`. En SVG usar `textLength` y `lengthAdjust` o calcular manualmente el ancho del texto.
+
+### Símbolos genealógicos en fechas
+Estándar genealógico universal — pendiente de implementar en GM:
+- `* AAAA` — nacimiento
+- `† AAAA` — fallecimiento
+- `* AAAA — † AAAA` — si ambas fechas conocidas
+- `* Desconocido` — si no hay fecha de nacimiento
+- `* AAAA` solo — si está vivo
+
+### Avatar con fallback diferenciado por género
+En lugar de un avatar genérico único, usar siluetas diferenciadas:
+- MALE → silueta azul-pizarra
+- FEMALE → silueta rosa-pastel
+- UNKNOWN → silueta gris neutra
+
+Implementar como SVG inline o como 3 imágenes base64 en `geometry.js`.
+
+### Bloqueo automático de género en modal por tipo de relación
+Al seleccionar "Padre" → campo Género se bloquea en MALE automáticamente.
+Al seleccionar "Madre" → campo Género se bloquea en FEMALE automáticamente.
+Al seleccionar "Hijo", "Hija" o "Cónyuge" → campo Género queda libre.
+Implementar en `AddRelativeModal.jsx` con lógica `onChange` en el selector de tipo de relación.
+
+---
+
+## 🔧 Mejoras de base de datos — pendientes
+
+### Trigger de integridad genealógica en Supabase
+Función PL/pgSQL que verifica antes de cada INSERT en `relationships`:
+- Una persona no puede ser padre/madre de sí misma
+- Una persona no puede ser su propio ancestro (detección de ciclos directos)
+
+```sql
+IF NEW.individual_id = parent_1 OR NEW.individual_id = parent_2 THEN
+    RAISE EXCEPTION 'Un individuo no puede ser descendiente de sí mismo';
+END IF;
+```
+
+### Auditoría de índices en Supabase
+Revisar y agregar índices faltantes para performance a escala:
+- `idx_relationships_person_a` sobre `person_a_id`
+- `idx_relationships_person_b` sobre `person_b_id`
+- `idx_relationships_type` sobre `type`
+- `idx_people_surname_1` sobre `surname_1`
+- `idx_people_birth_year` sobre `birth_year`
+- `idx_people_birth_place` sobre `birth_place`
+
+### birth_order en relaciones hijo
+Agregar campo `birth_order INTEGER` a la tabla `relationships` para tipos parentales. Permite ordenar hijos explícitamente sin depender del año de nacimiento (útil cuando el año es desconocido).
+
+### Migración del campo `adopted`
+El campo `adopted` en `people` está obsoleto (ver DECISIONS [027]). Migrar a tipos de relación explícitos (`adoptive_father`, `adoptive_mother`) y eliminar el campo.
+
+---
+
 ## 📊 Tabla derived_relationships
 
 Para búsquedas eficientes a escala, implementar precálculo de relaciones derivadas:
@@ -76,12 +145,38 @@ Sin navegar el grafo en tiempo real para cada búsqueda.
 
 ---
 
+## 🖥️ Sidebar de persona (ProfileDrawer) — próximo bloque de trabajo
+
+Implementar el panel lateral deslizable al estilo MyHeritage. Especificación completa en `myheritage.md` sección 45.
+
+**Detonador:** click simple en zona neutra de la tarjeta de persona.
+
+**CSS de animación:**
+```css
+position: fixed; right: 0; width: 380px; height: 100vh;
+transition: transform 0.3s ease-in-out;
+/* Cerrado: */ transform: translateX(100%);
+/* Abierto: */ transform: translateX(0);
+```
+
+**Contenido:**
+- Encabezado: foto 120x120px, nombre, edad, botones [Árbol] y [Editar]
+- Datos biográficos con edición inline (click texto → input → blur/Enter → PATCH)
+- Matrimonios con link clickeable al cónyuge
+- Familia inmediata: padres, hermanos, cónyuge(s), hijos — cada uno navegable
+- Eventos de vida cronológicos
+- Fuentes y documentos vinculados
+
+**Resuelve también:** BUG-01 y BUG-02 (edición y disolución de relaciones desde el sidebar).
+
+---
+
 ## 👤 Sistema de foco completo
 
-- Doble click en nodo → activa foco → centra la vista → aparece en barra de contexto
-- Badge `xN` → popup con lista de contextos donde aparece la persona → navegar
-- Simbolito de link → navegar al subgrafo de esa persona
-- Foco por defecto implementado — limpiar foco muestra árbol completo
+- Click en nodo → activa foco: centra vista + actualiza barra de contexto ✅ implementado
+- Badge de vinculación → click → recarga subgrafo de esa persona ✅ implementado
+- Badge `xN` → popup con lista de contextos → navegar (pendiente)
+- Filtro generacional con foco activo (pendiente)
 
 ---
 
@@ -91,6 +186,7 @@ Sin navegar el grafo en tiempo real para cada búsqueda.
 - Manejo de ciclos genealógicos (primos que se casan)
 - Vista hourglass centrada en una persona
 - Filtro generacional real sin foco activo
+- BranchExtender: botón `+N` para expandir/colapsar ramas con animación fade-in
 
 ---
 
@@ -121,12 +217,13 @@ Campos adicionales para el perfil (segunda etapa del módulo):
 - Dropdown desde seed IGE (~3.800 parroquias)
 - Reemplaza texto libre de lugar de nacimiento
 - Puente entre el árbol y el módulo "Tu lugar en Galicia"
+- **Identificación por lugar de origen:** opción de mostrar el lugar de origen como identificador complementario en el nodo. Ejemplo: "Manuel de Soutolongo". Activable/desactivable por configuración del árbol. Requiere campos territoriales gallegos implementados.
 
 ---
 
 ## 📅 Precisión de fechas persistida
 
-El selector de precisión ("Exactamente", "Antes de", "Después de", "Alrededor de") existe en la UI pero no se persiste. Requiere columnas `*_date_precision` en `people`.
+El selector de precisión ("Exactamente", "Antes de", "Después de", "Alrededor de") existe en la UI pero no se persiste. Requiere columnas `*_date_precision` en `people`. Soportar también fechas aproximadas tipo "Circa 1930".
 
 ---
 
@@ -147,7 +244,7 @@ Verificación lógica de:
 - Relaciones circulares
 - Datos críticos faltantes
 
-Se ejecuta post-importación GEDCOM y bajo demanda.
+Se ejecuta post-importación GEDCOM y bajo demanda. Panel de alertas en línea de tiempo.
 
 ---
 
@@ -156,6 +253,20 @@ Se ejecuta post-importación GEDCOM y bajo demanda.
 - Almacenamiento en Supabase Storage
 - Múltiples fotos por persona con fecha y descripción
 - Foto principal para mostrar en el nodo del árbol
+- FaceTaggerOverlay: detección y etiquetado de rostros con coordenadas normalizadas
+- Efecto cruzado bidireccional: hover sobre nombre → ilumina rostro en imagen
+
+---
+
+## 🤖 Pipeline de IA para fotos (tercera etapa)
+
+Especificación completa en `myheritage.md` sección 47.
+
+- **Mejorar nitidez** (GFPGAN): overlay con progreso → ImageSlider antes/después
+- **Colorear** (DeOldify/DDColor): modal de selección versión → toggle Color/B&N permanente
+- **Animar rostro** (Deep Nostalgia): selección de rostro → video HTML5 autoplay loop
+
+Mientras hay un proceso IA activo, todos los botones de IA se bloquean simultáneamente.
 
 ---
 
@@ -163,19 +274,63 @@ Se ejecuta post-importación GEDCOM y bajo demanda.
 
 Una persona que existe en un árbol puede aparecer como referencia (🔗) en otro árbol distinto. Al integrar al portal:
 - Una persona vive en su árbol natural
-- En otros árboles aparece como referencia con icono 🔗
+- En otros árboles aparece como referencia con badge de vinculación
 - Mecanismo manual: "buscar en otros árboles" al agregar pareja/familiar
 - Smart Matching automático (tercera etapa del portal)
 
 ---
 
+## 🔍 Smart Matching (tercera etapa)
+
+Fórmula de confidence scoring:
+```
+S_confianza = w1·S_nombre + w2·S_fecha_nacimiento + w3·S_coincidencia_padres
+```
+Umbral: 85%. Algoritmos fonéticos: Double Metaphone / Soundex adaptado al español.
+NLP gallego: "Xoán Carballo de Boqueixón" ↔ "Juan Carballo de Boqueixón".
+
+---
+
+## 🏗️ Onboarding Wizard (segunda etapa)
+
+Flujo de registro ligado a la creación del primer núcleo familiar:
+1. Formulario simple sin contraseña inicial (nombre, apellido, género, email)
+2. Captura de 4 abuelos con estado vital
+3. POST `/api/v1/tree/initialize` → lanza Smart Matching → redirige al árbol
+
+Especificación completa en `myheritage.md` sección 49.
+
+---
+
+## 💰 Paywall (segunda etapa)
+
+Doble validación frontend + backend:
+- Límite configurable de personas por plan (default 250 plan gratuito)
+- Blur del árbol + modal de upgrade al alcanzar el límite
+- Coincidencias visibles pero datos ofuscados desde backend para plan gratuito
+
+Especificación completa en `myheritage.md` sección 50.
+
+---
+
 ## ⚡ Performance a escala
 
-- Índices en Supabase sobre `birth_year`, `birth_place`, `surname_1`, `type`
+- Índices en Supabase (ver sección "Mejoras de base de datos")
 - React.memo para evitar re-renders del canvas SVG
 - Carga lazy del grafo
 - Web Workers para cálculo de layout en thread separado
 - Virtualización para árboles masivos (solo nodos visibles en viewport)
+
+---
+
+## 📊 Registro de conteo de tokens por prompt
+
+Sistema para registrar automáticamente el consumo de tokens de cada sesión de Claude Code. Opciones a evaluar:
+- Leer el contador visible en la interfaz de Claude Code al finalizar cada prompt
+- Consultar `console.anthropic.com` manualmente después de cada sesión
+- Explorar si la API de Anthropic expone endpoint de usage consultable desde scripts
+
+Objetivo: calcular el costo acumulado del proyecto por prompt y por sesión.
 
 ---
 

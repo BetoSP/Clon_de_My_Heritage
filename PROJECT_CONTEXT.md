@@ -32,19 +32,27 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 ✔ Nodos fantasma para agregar familiares
 ✔ Modal agregar familiar con buscador en tiempo real
 ✔ Buscador de persona existente para padre, madre y cónyuge
-✔ Tipos de vínculo de pareja explícitos (married, partner, co_parent, etc.)
+✔ Tipos de vínculo de pareja explícitos (married, partner, co_parent, separated, divorced, widowed, unknown)
+✔ PARENT_TYPES extendidos (father, mother, adoptive_father, adoptive_mother, stepfather, stepmother, foster_father, foster_mother)
 ✔ Visualización diferenciada por tipo de relación
 ✔ co_parent con línea punteada violeta
 ✔ Foco por defecto en primera persona al cargar
+✔ Click en nodo → activa foco: centra vista + actualiza barra de contexto
+✔ Badge de vinculación con lógica correcta (hasHiddenParents || unionCount > 1)
 ✔ Subgrafo por foco via RPC get_subgraph en Supabase
-✔ Barra de contexto con persona foco y botón limpiar foco
-✔ Simbolito de link en cónyuges
-✔ Badge xN cuando persona aparece en múltiples union nodes
+✔ get_subgraph incluye ancestros, descendientes, hermanos y cónyuges (sin ancestros de cónyuges)
+✔ Barra de contexto con persona foco, persona seleccionada y botón limpiar foco
 ✔ Apellidos estructurados: surname_1, surname_2, surname_married
+✔ Apellidos en nodo: lógica display (surname_1+surname_2 o "de surname_married")
+✔ computeDisplaySurnames centralizado en personUtils.js
+✔ computeFullSurnames centralizado en personUtils.js
 ✔ Sugerencia automática de apellidos basada en progenitores
-✔ Design system con variables CSS
+✔ Design system con variables CSS — cero valores hardcodeados
+✔ Constantes dimensionales en geometry.js
 ✔ Espaciado simétrico entre generaciones (gap padre→línea = gap línea→hijo)
 ✔ getVacantSlots detecta todos los PARENT_TYPES (adoptive, step, foster)
+✔ Footer minimalista implementado
+✔ Regla del subgrafo documentada en ENGINE_RULES.md
 
 ---
 
@@ -54,6 +62,8 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 - `relationships` = edges del grafo
 - union nodes = nodos derivados en runtime para cualquier COUPLE_TYPE
 - `child_of` = edge derivado cuando ambos padres son pareja
+- `node.data.hasHiddenParents` = flag calculado en buildFamilyGraph para el badge de vinculación
+- `node.data.surnames` = apellidos calculados para display en nodo (distinto de `people.surnames` en DB)
 - `derived_relationships` = tabla de relaciones precalculadas (pendiente)
 
 ---
@@ -67,7 +77,7 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 | surname_1        | text        | primer apellido                   |
 | surname_2        | text        | segundo apellido                  |
 | surname_married  | text        | apellido de casada (opcional)     |
-| surnames         | text        | calculado en frontend (nombre completo con "de casada"); `node.data.surnames` usa lógica distinta — ver [031] |
+| surnames         | text        | calculado en frontend — nombre completo con "de casada". `node.data.surnames` usa lógica distinta — ver DECISIONS [031] |
 | prefix           | text        | opcional                          |
 | suffix           | text        | opcional                          |
 | birth_day        | integer     | opcional                          |
@@ -125,37 +135,83 @@ get_subgraph(focus_id bigint, generations_up int, generations_down int)
 RETURNS TABLE(person_id bigint)
 ```
 
-Devuelve IDs de ancestros, descendientes y cónyuges del focus_id.
+Devuelve IDs de: ancestros del foco, descendientes del foco, hermanos del foco, y cónyuges de todos los anteriores. **No incluye ancestros de los cónyuges** — regla cardinal documentada en ENGINE_RULES.md. Si `generations_up` o `generations_down` >= 10, se trata como sin límite.
+
+---
+
+## 📁 Estructura de archivos relevante
+
+```
+src/
+├── components/
+│   ├── GraphView.jsx         — canvas SVG, pan/zoom, nodos, edges, badge
+│   ├── PersonModal.jsx       — modal editar/crear persona
+│   ├── AddRelativeModal.jsx  — modal agregar familiar
+│   ├── RelationshipModal.jsx — modal editar relaciones (inaccesible — BUG-01)
+│   ├── TopNavBar.jsx
+│   ├── TreeContextBar.jsx    — barra de contexto con foco y selección
+│   ├── TreeControlPanel.jsx
+│   └── FooterBar.jsx         — footer minimalista
+├── graph/
+│   ├── buildFamilyGraph.js   — transforma datos en grafo; calcula hasHiddenParents
+│   ├── layoutFamilyGraph.js  — algoritmo de layout bottom-up
+│   ├── geometry.js           — constantes dimensionales (sin hardcoding)
+│   └── relationshipTypes.js  — COUPLE_TYPES, PARENT_TYPES, PARENT_EDGE_TYPES
+├── services/
+│   ├── peopleService.js
+│   └── relationshipService.js
+├── utils/
+│   └── personUtils.js        — computeDisplaySurnames, computeFullSurnames
+├── lib/
+│   └── supabase.js
+├── App.jsx
+├── App.css
+└── index.css                 — design system (variables CSS)
+```
 
 ---
 
 ## 🚧 Pendiente de implementación — en orden de prioridad
 
-### Bugs críticos
-- CRUD de relaciones inaccesible desde la UI — diferido a implementación del sidebar (ver LEGADO_FUTURO [BUG-01] y [BUG-02])
-- Pérdida de filiación visual cuando un hijo casado es "secundario" en su grupo — ver LEGADO_FUTURO [BUG-03]
+### Inmediato (próximos prompts)
+- Barra de género en nodo (franja vertical 4px, color por género)
+- Truncado de nombre con ellipsis (~22 caracteres)
+- Símbolos `*` y `†` en fechas del nodo
+- Avatar con fallback diferenciado por género (3 siluetas)
+- Bloqueo automático de género en modal al seleccionar Padre/Madre
+- Sidebar de persona (ProfileDrawer) — resuelve también BUG-01 y BUG-02
 
-### Features pendientes del módulo árbol
-- Tipos parentales extendidos en constraint Supabase (adoptive_father, stepfather, etc.)
-- Migración del campo `adopted` de people al tipo de relación
-- Sistema de foco completo (doble click → centra vista, badge xN → popup de contextos)
+### Base de datos
+- Trigger de integridad genealógica en Supabase
+- Auditoría y creación de índices faltantes
+- Migración del campo `adopted` al tipo de relación (DECISIONS [027])
+- Tipos parentales extendidos en constraint Supabase
+
+### Features del módulo
+- Sistema de foco completo (badge xN → popup de contextos)
 - Tabla derived_relationships
 - Filtro generacional real sin foco activo
 - GEDCOM import/export
-- Perfil extendido de persona (emigración, bautismo, servicio militar, ocupaciones)
+- Perfil extendido (emigración, bautismo, servicio militar, ocupaciones)
 - Fotos de personas
 - Campos territoriales gallegos (parroquia, aldea, concello)
 - Consistency Checker
 - Precisión de fechas persistida en DB
+- birth_order en relaciones hijo
 - Búsqueda avanzada multi-campo
-- Algoritmo de layout Reingold-Tilford completo
 
-### Bases compartidas a crear en portal/ (primer módulo las crea)
+### Bugs pendientes
+- BUG-01: CRUD de relaciones inaccesible (diferido al sidebar)
+- BUG-02: DissolveCell sin UI (diferido al sidebar)
+- BUG-03: Pérdida de filiación en hijos casados — líneas diagonales (1-2 sesiones)
+- BUG-04: Nodos fantasma con coordenadas negativas ocultos
+- BUG-05: Slider de generaciones sin efecto sin foco activo
+
+### Bases compartidas a crear en portal/
 - `portal/auth/` — autenticación Supabase Auth
 - `portal/design-system/` — variables CSS, tipografía, colores
 - `portal/payments/` — planes, límites, feature flags
 - `portal/i18n/` — textos en es/gl/en
-- Footer genérico del portal
 
 ---
 
