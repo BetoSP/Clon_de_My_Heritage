@@ -61,10 +61,14 @@ export const NODE_BADGE_DY = 0;                  // badge: y desde top del nodo
 // ── Union node ────────────────────────────────────────────────────────────
 export const UNION_R = 12;
 export const UNION_DOT_R = 4;
+// Offset Y desde union.y hasta donde arranca el elbow hacia los hijos.
+// Equivale al fondo del nodo padre en coordenadas del union node,
+// garantizando simetría entre el espacio padre→línea y línea→hijo.
+export const UNION_EDGE_DY = PERSON_H / 2 + UNION_R; // = 52 → srcBotY = PERSON_H = 80
 
 // ── Layout del árbol ──────────────────────────────────────────────────────
 export const H_SPACING = 200;
-export const V_SPACING = 200;
+export const V_SPACING = 160;
 export const CANVAS_PADDING = 120;
 
 // ── Líneas del árbol ──────────────────────────────────────────────────────
@@ -85,6 +89,37 @@ export const GHOST_SHADOW_DX = 2;
 export const GHOST_SHADOW_DY = 3;
 export const GHOST_LINE_W = 1;
 export const GHOST_LINE_OPACITY = 0.9;
+
+// ── Ghost node avatar (dimensiones internas) ──────────────────────────────
+export const GHOST_AVATAR_R = 17;           // radio del círculo exterior
+export const GHOST_AVATAR_HEAD_R = 6.5;     // radio de la cabeza
+export const GHOST_AVATAR_HEAD_DY = 6;      // offset vertical cabeza (resta)
+export const GHOST_AVATAR_BODY_RX = 11;     // rx del cuerpo (elipse)
+export const GHOST_AVATAR_BODY_RY = 7.5;    // ry del cuerpo (elipse)
+export const GHOST_AVATAR_BODY_DY = 9;      // offset vertical cuerpo (suma)
+export const GHOST_TEXT_DY = 5;             // offset vertical texto ghost
+
+// ── Grosor de trazos de nodo ──────────────────────────────────────────────
+// A1 (borde activo/foco = 2.5) vive en CSS como --node-active-stroke-w
+export const NODE_STROKE_NORMAL = 1.5;      // borde nodo normal, icon borders, add button
+export const NODE_STROKE_THIN = 1;          // ring de selección, edit icon
+
+// ── Miscellaneous node ────────────────────────────────────────────────────
+export const NODE_BADGE_TEXT_DY = 4;        // offset vertical del texto del badge xN
+
+// ── Canvas grid ───────────────────────────────────────────────────────────
+export const GRID_CELL_SIZE = 40;           // tamaño de celda del grid de fondo
+export const GRID_STROKE_W = 0.5;           // grosor de línea del grid
+
+// ── Canvas size fallbacks ─────────────────────────────────────────────────
+export const CANVAS_FALLBACK_W = 400;       // ancho cuando no hay nodos
+export const CANVAS_FALLBACK_H = 200;       // alto cuando no hay nodos
+
+// ── Opacidades ────────────────────────────────────────────────────────────
+export const EDGE_OPACITY_NORMAL = 0.8;     // edges en estado normal
+export const EDGE_OPACITY_GHOST = 0.08;     // edges cuando hay ghost activo
+export const NODE_OPACITY_UNFOCUSED = 0.15; // nodos no-foco en modo ghost
+export const NODE_OPACITY_UNMATCHED = 0.18; // nodos que no matchean búsqueda
 
 // ── Offsets de cada slot fantasma ─────────────────────────────────────────
 export function getSlotOffset(position) {
@@ -132,8 +167,8 @@ export function getSlotOffset(position) {
 }
 
 // ── Línea ortogonal con radio en codos ────────────────────────────────────
-export function elbowPath(x1, y1, x2, y2, r = EDGE_RADIUS) {
-    const midY = y1 + (y2 - y1) / 2;
+export function elbowPath(x1, y1, x2, y2, r = EDGE_RADIUS, midYOverride = null) {
+    const midY = midYOverride !== null ? midYOverride : y1 + (y2 - y1) / 2;
     const dx = x2 - x1;
     const sign = dx >= 0 ? 1 : -1;
     const sr = Math.min(r, Math.abs(dx) / 2, Math.abs(midY - y1) / 2, Math.abs(y2 - midY) / 2);

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { computeFullSurnames } from "../utils/personUtils.js";
 
 const DATE_PRECISION = ["Exactamente", "Antes de", "Después de", "Alrededor de"];
 
@@ -11,14 +12,6 @@ const SPOUSE_TYPES = [
     { value: "widowed", label: "Viudo/a" },
     { value: "unknown", label: "Desconocido" },
 ];
-
-function computeSurnames(surname_1, surname_2, surname_married, gender) {
-    const base = [surname_1, surname_2].filter(Boolean).join(" ");
-    if (gender === "female" && surname_married) {
-        return base ? `${base} de ${surname_married}` : `de ${surname_married}`;
-    }
-    return base || null;
-}
 
 function DateFields({ label, precision, onPrecision, day, onDay, month, onMonth, year, onYear }) {
     return (
@@ -332,7 +325,7 @@ export default function AddRelativeModal({
             surname_1: s1,
             surname_2: s2,
             surname_married: sm,
-            surnames: computeSurnames(s1, s2, sm, gender),
+            surnames: computeFullSurnames(s1, s2, sm, gender),
             prefix: prefix.trim() || null,
             suffix: suffix.trim() || null,
             gender,
@@ -371,7 +364,7 @@ export default function AddRelativeModal({
                         surname_1: ns1,
                         surname_2: ns2,
                         surname_married: null,
-                        surnames: computeSurnames(ns1, ns2, null, np.gender),
+                        surnames: computeFullSurnames(ns1, ns2, null, np.gender),
                         gender: np.gender,
                         adopted: false,
                         is_alive: true,

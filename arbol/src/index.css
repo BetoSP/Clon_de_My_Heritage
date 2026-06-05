@@ -84,6 +84,10 @@
   /* líneas de nodos fantasma */
   --edge-color-co-parent: #9c27b0;
   /* líneas de co-parentes */
+  --edge-dash-co-parent: 6,4;
+  /* patrón dash para co_parent */
+  --edge-dash-dissolved: 5,3;
+  /* patrón dash para relaciones disueltas */
 
   /* ── Nodo persona — masculino ────────────────────────────────────────── */
   --node-male-bg: #f0fdff;
@@ -111,6 +115,7 @@
   /* ── Nodo persona — seleccionado ─────────────────────────────────────── */
   --node-selection-bg: #7c3aed1a;
   --node-selection-border: #7c3aed;
+  --node-selection-dash: 4,2;
 
   /* ── Nodo persona — texto ────────────────────────────────────────────── */
   --node-text-name: #1e293b;
@@ -140,6 +145,9 @@
   /* fontSize botón agregar */
 
   /* ── Íconos de nodo — colores ────────────────────────────────────────── */
+  --node-btn-add-bg: #ffffff;
+  --node-btn-add-opacity: 0.85;
+  --node-icon-edit-opacity: 0.9;
   --icon-edit-bg: #ffffff;
   --icon-link-bg: #ffffff;
   --icon-badge-bg: var(--color-danger);
@@ -170,6 +178,8 @@
   /* ══════════════════════════════════════════════════════════════════════ */
 
   /* ── Tipografía UI ───────────────────────────────────────────────────── */
+  --font-family-node: system-ui, sans-serif;
+  /* tipografía de nodos del árbol (SVG text) */
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "SFMono-Regular", monospace;
 

@@ -9,3 +9,13 @@ export function computeDisplaySurnames(person) {
   if (sm) return `de ${sm}`;
   return null;
 }
+
+// Computes the full surname string for DB storage.
+// Includes "de [surname_married]" for women (see DECISIONS [021]).
+export function computeFullSurnames(surname_1, surname_2, surname_married, gender) {
+  const base = [surname_1, surname_2].filter(Boolean).join(" ");
+  if (gender === "female" && surname_married) {
+    return base ? `${base} de ${surname_married}` : `de ${surname_married}`;
+  }
+  return base || null;
+}

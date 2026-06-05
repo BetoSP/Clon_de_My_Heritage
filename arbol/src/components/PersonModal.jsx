@@ -1,14 +1,7 @@
 import { useState } from "react";
+import { computeFullSurnames } from "../utils/personUtils.js";
 
 const DATE_PRECISION = ["Exactamente", "Antes de", "Después de", "Alrededor de"];
-
-function computeSurnames(surname_1, surname_2, surname_married, gender) {
-    const base = [surname_1, surname_2].filter(Boolean).join(" ");
-    if (gender === "female" && surname_married) {
-        return base ? `${base} de ${surname_married}` : `de ${surname_married}`;
-    }
-    return base || null;
-}
 
 function DateFields({ label, precision, onPrecision, day, onDay, month, onMonth, year, onYear }) {
     return (
@@ -98,7 +91,7 @@ export default function PersonModal({ person, people = [], relationships = [], o
             surname_1: s1,
             surname_2: s2,
             surname_married: sm,
-            surnames: computeSurnames(s1, s2, sm, gender),
+            surnames: computeFullSurnames(s1, s2, sm, gender),
             prefix: prefix.trim() || null,
             suffix: suffix.trim() || null,
             gender,

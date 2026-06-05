@@ -12,7 +12,15 @@ import {
   NODE_ICON_SIZE, NODE_ICON_EDIT_R, NODE_ICON_LINK_R, NODE_BADGE_R, NODE_BADGE_FONT,
   NODE_ICON_EDIT_CX, NODE_ICON_EDIT_CY, NODE_ICON_LINK_DX, NODE_ICON_LINK_DY,
   NODE_BADGE_DX, NODE_BADGE_DY,
-  UNION_R, UNION_DOT_R,
+  NODE_STROKE_NORMAL, NODE_STROKE_THIN, NODE_BADGE_TEXT_DY,
+  GHOST_AVATAR_R, GHOST_AVATAR_HEAD_R, GHOST_AVATAR_HEAD_DY,
+  GHOST_AVATAR_BODY_RX, GHOST_AVATAR_BODY_RY, GHOST_AVATAR_BODY_DY, GHOST_TEXT_DY,
+  GRID_CELL_SIZE, GRID_STROKE_W,
+  CANVAS_FALLBACK_W, CANVAS_FALLBACK_H,
+  EDGE_OPACITY_NORMAL, EDGE_OPACITY_GHOST,
+  NODE_OPACITY_UNFOCUSED, NODE_OPACITY_UNMATCHED,
+  UNION_R, UNION_DOT_R, UNION_EDGE_DY,
+  EDGE_RADIUS,
   CANVAS_PADDING,
   EDGE_STROKE_PARENT, EDGE_STROKE_SPOUSE,
   GHOST_W, GHOST_H,
@@ -36,6 +44,10 @@ function edgePath(src, tgt) {
   const tgtTopY = tgt.y + (isTgtUnion ? UNION_R : 0);
   if (!isSrcUnion && isTgtUnion) {
     return `M ${srcCX},${srcCY} L ${tgt.x + UNION_R},${tgt.y + UNION_R}`;
+  }
+  if (isSrcUnion && !isTgtUnion) {
+    const midY = (src.y + UNION_EDGE_DY + tgt.y) / 2;
+    return elbowPath(srcCX, srcBotY, tgtCX, tgtTopY, EDGE_RADIUS, midY);
   }
   return elbowPath(srcCX, srcBotY, tgtCX, tgtTopY);
 }
@@ -81,10 +93,10 @@ function GhostNode({ x, y, label, isFemale, onClick }) {
     <g onClick={onClick} style={{ cursor: "pointer" }}>
       <rect x={x + GHOST_SHADOW_DX} y={y + GHOST_SHADOW_DY} width={GHOST_W} height={GHOST_H} rx={GHOST_RADIUS} fill="var(--ghost-node-shadow)" />
       <rect x={x} y={y} width={GHOST_W} height={GHOST_H} rx={GHOST_RADIUS} fill="var(--ghost-node-bg)" stroke={borderColor} strokeWidth={GHOST_STROKE_W} />
-      <circle cx={x + GHOST_AVATAR_CX} cy={y + GHOST_H / 2} r={17} fill="var(--ghost-avatar-bg)" />
-      <circle cx={x + GHOST_AVATAR_CX} cy={y + GHOST_H / 2 - 6} r={6.5} fill="var(--ghost-avatar-fill)" />
-      <ellipse cx={x + GHOST_AVATAR_CX} cy={y + GHOST_H / 2 + 9} rx={11} ry={7.5} fill="var(--ghost-avatar-fill)" />
-      <text x={x + GHOST_TEXT_X} y={y + GHOST_H / 2 + 5} fontSize="var(--ghost-node-font)" fill="var(--ghost-node-text)" fontWeight="600" fontFamily="system-ui, sans-serif">
+      <circle cx={x + GHOST_AVATAR_CX} cy={y + GHOST_H / 2} r={GHOST_AVATAR_R} fill="var(--ghost-avatar-bg)" />
+      <circle cx={x + GHOST_AVATAR_CX} cy={y + GHOST_H / 2 - GHOST_AVATAR_HEAD_DY} r={GHOST_AVATAR_HEAD_R} fill="var(--ghost-avatar-fill)" />
+      <ellipse cx={x + GHOST_AVATAR_CX} cy={y + GHOST_H / 2 + GHOST_AVATAR_BODY_DY} rx={GHOST_AVATAR_BODY_RX} ry={GHOST_AVATAR_BODY_RY} fill="var(--ghost-avatar-fill)" />
+      <text x={x + GHOST_TEXT_X} y={y + GHOST_H / 2 + GHOST_TEXT_DY} fontSize="var(--ghost-node-font)" fill="var(--ghost-node-text)" style={{ fontFamily: "var(--font-family-node)", fontWeight: "var(--font-weight-semibold)" }}>
         {label}
       </text>
     </g>
@@ -98,7 +110,6 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, onSe
   const accentColor = isFocus ? "var(--node-focus-accent)" : isMale ? "var(--node-male-accent)" : "var(--node-female-accent)";
   const bgColor = isGhostActive ? "var(--node-active-bg)" : isFocus ? "var(--node-focus-bg)" : isMale ? "var(--node-male-bg)" : "var(--node-female-bg)";
   const borderColor = isGhostActive ? (isMale ? "var(--node-active-border-male)" : "var(--node-active-border-female)") : isFocus ? "var(--node-focus-border)" : isMale ? "var(--node-male-border)" : "var(--node-female-border)";
-  const sw = isGhostActive ? 2.5 : isFocus ? 2.5 : 1.5;
 
   const name = (() => {
     const n = node.data.name ?? "—";
@@ -123,39 +134,39 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, onSe
   return (
     <g style={{ cursor: "pointer" }} onClick={() => onSelect(node.id)}>
       {isSelected && !isGhostActive && (
-        <rect x={x - NODE_SELECTION_PAD} y={y - NODE_SELECTION_PAD} width={PERSON_W + NODE_SELECTION_PAD * 2} height={PERSON_H + NODE_SELECTION_PAD * 2} rx={NODE_SELECTION_RADIUS} fill="var(--node-selection-bg)" stroke="var(--node-selection-border)" strokeWidth={1} strokeDasharray="4,2" />
+        <rect x={x - NODE_SELECTION_PAD} y={y - NODE_SELECTION_PAD} width={PERSON_W + NODE_SELECTION_PAD * 2} height={PERSON_H + NODE_SELECTION_PAD * 2} rx={NODE_SELECTION_RADIUS} fill="var(--node-selection-bg)" stroke="var(--node-selection-border)" strokeWidth={NODE_STROKE_THIN} strokeDasharray="var(--node-selection-dash)" />
       )}
       <rect x={x + NODE_SHADOW_DX} y={y + NODE_SHADOW_DY} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill="var(--node-shadow-color)" />
-      <rect x={x} y={y} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill={bgColor} stroke={borderColor} strokeWidth={sw} />
+      <rect x={x} y={y} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill={bgColor} stroke={borderColor} style={{ strokeWidth: (isGhostActive || isFocus) ? "var(--node-active-stroke-w)" : NODE_STROKE_NORMAL }} />
       <line x1={x + NODE_ACCENT_X} y1={y + NODE_ACCENT_TOP} x2={x + NODE_ACCENT_X} y2={y + PERSON_H - NODE_ACCENT_TOP} stroke={accentColor} strokeWidth={NODE_ACCENT_W} strokeLinecap="round" />
       <PersonAvatar cx={x + AVATAR_CX} cy={y + AVATAR_CY} r={AVATAR_R} />
-      <text x={x + TEXT_X} y={y + 20} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" fontFamily="system-ui, sans-serif">{name}</text>
-      {surnames && <text x={x + TEXT_X} y={y + 33} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" fontFamily="system-ui, sans-serif">{surnames}</text>}
-      {dates && <text x={x + TEXT_X} y={y + 46} fontSize="var(--node-font-date)" fill="var(--node-text-date)">{dates}</text>}
+      <text x={x + TEXT_X} y={y + 20} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" style={{ fontFamily: "var(--font-family-node)" }}>{name}</text>
+      {surnames && <text x={x + TEXT_X} y={y + 33} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" style={{ fontFamily: "var(--font-family-node)" }}>{surnames}</text>}
+      {dates && <text x={x + TEXT_X} y={y + 46} fontSize="var(--node-font-date)" fill="var(--node-text-date)" style={{ fontFamily: "var(--font-family-node)" }}>{dates}</text>}
 
       {unionCount > 1 && (
         <g>
           <circle cx={badgeCX} cy={badgeCY} r={NODE_BADGE_R} fill="var(--icon-badge-bg)" />
-          <text x={badgeCX} y={badgeCY + 4} textAnchor="middle" fontSize={NODE_BADGE_FONT} fontWeight="bold" fill="var(--icon-badge-text)" fontFamily="system-ui, sans-serif">x{unionCount}</text>
+          <text x={badgeCX} y={badgeCY + NODE_BADGE_TEXT_DY} textAnchor="middle" fontSize={NODE_BADGE_FONT} fill="var(--icon-badge-text)" style={{ fontFamily: "var(--font-family-node)", fontWeight: "var(--font-weight-bold)" }}>x{unionCount}</text>
         </g>
       )}
 
       {!isGhostActive && (node.data.hasHiddenParents || unionCount > 1) && !isFocus && (
         <g onClick={(e) => { e.stopPropagation(); onFocusPerson(node.id); }} style={{ cursor: "pointer" }}>
-          <circle cx={linkCX} cy={linkCY} r={NODE_ICON_LINK_R} fill="var(--icon-link-bg)" stroke={accentColor} strokeWidth={1.5} />
+          <circle cx={linkCX} cy={linkCY} r={NODE_ICON_LINK_R} fill="var(--icon-link-bg)" stroke={accentColor} strokeWidth={NODE_STROKE_NORMAL} />
           <use href="/icons.svg#icon-link-tree" x={linkCX - NODE_ICON_SIZE / 2} y={linkCY - NODE_ICON_SIZE / 2} width={NODE_ICON_SIZE} height={NODE_ICON_SIZE} stroke={accentColor} color={accentColor} />
         </g>
       )}
 
       {!isGhostActive && (
         <g onClick={(e) => { e.stopPropagation(); onEditPerson(node.id); }} style={{ cursor: "pointer" }}>
-          <circle cx={editCX} cy={editCY} r={NODE_ICON_EDIT_R} fill="var(--icon-edit-bg)" stroke={accentColor} strokeWidth={1} opacity={0.9} />
+          <circle cx={editCX} cy={editCY} r={NODE_ICON_EDIT_R} fill="var(--icon-edit-bg)" stroke={accentColor} strokeWidth={NODE_STROKE_THIN} style={{ opacity: "var(--node-icon-edit-opacity)" }} />
           <use href="/icons.svg#icon-edit" x={editCX - NODE_ICON_SIZE / 2} y={editCY - NODE_ICON_SIZE / 2} width={NODE_ICON_SIZE} height={NODE_ICON_SIZE} stroke={accentColor} color={accentColor} />
         </g>
       )}
 
       <g onClick={(e) => { e.stopPropagation(); onAddRelative(node.id); }} style={{ cursor: "pointer" }}>
-        <circle cx={x + PERSON_W / 2} cy={y + PERSON_H + NODE_BTN_ADD_CY} r={NODE_BTN_ADD_R} fill="white" stroke={accentColor} strokeWidth={1.5} opacity={0.85} />
+        <circle cx={x + PERSON_W / 2} cy={y + PERSON_H + NODE_BTN_ADD_CY} r={NODE_BTN_ADD_R} fill="var(--node-btn-add-bg)" stroke={accentColor} strokeWidth={NODE_STROKE_NORMAL} style={{ opacity: "var(--node-btn-add-opacity)" }} />
         <use href="/icons.svg#icon-add" x={x + PERSON_W / 2 - NODE_ICON_SIZE / 2} y={y + PERSON_H + NODE_BTN_ADD_CY - NODE_ICON_SIZE / 2} width={NODE_ICON_SIZE} height={NODE_ICON_SIZE} stroke={accentColor} color={accentColor} />
       </g>
     </g>
@@ -210,11 +221,11 @@ export default function GraphView({
 
   const canvasW = layout.nodes.length
     ? Math.max(...layout.nodes.map((n) => n.x + (n.type === "union" ? UNION_R * 2 : PERSON_W))) + CANVAS_PADDING * 2 + GHOST_W + CANVAS_PADDING
-    : 400;
+    : CANVAS_FALLBACK_W;
 
   const canvasH = layout.nodes.length
     ? Math.max(...layout.nodes.map((n) => n.y + (n.type === "union" ? UNION_R * 2 : PERSON_H))) + CANVAS_PADDING * 2 + GHOST_H + CANVAS_PADDING
-    : 200;
+    : CANVAS_FALLBACK_H;
 
   useEffect(() => {
     if (!wrapperRef.current || layout.nodes.length === 0) return;
@@ -290,10 +301,10 @@ export default function GraphView({
   }
 
   function nodeOpacity(node) {
-    if (activeGhostNodeId) return node.id === activeGhostNodeId ? 1 : 0.15;
+    if (activeGhostNodeId) return node.id === activeGhostNodeId ? 1 : NODE_OPACITY_UNFOCUSED;
     if (!searchQuery) return 1;
     const name = (node.data?.name ?? "").toLowerCase();
-    return name.includes(searchQuery.toLowerCase()) ? 1 : 0.18;
+    return name.includes(searchQuery.toLowerCase()) ? 1 : NODE_OPACITY_UNMATCHED;
   }
 
   function handleAddRelative(nodeId) {
@@ -367,8 +378,8 @@ export default function GraphView({
             }}>
               <svg width={canvasW} height={canvasH} style={{ display: "block" }} overflow="visible">
                 <defs>
-                  <pattern id="grid" width={40} height={40} patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" strokeWidth={0.5} />
+                  <pattern id="grid" width={GRID_CELL_SIZE} height={GRID_CELL_SIZE} patternUnits="userSpaceOnUse">
+                    <path d={`M ${GRID_CELL_SIZE} 0 L 0 0 0 ${GRID_CELL_SIZE}`} fill="none" stroke="var(--color-border-light)" strokeWidth={GRID_STROKE_W} />
                   </pattern>
                 </defs>
                 <rect width={canvasW} height={canvasH} fill="url(#grid)" />
@@ -389,14 +400,14 @@ export default function GraphView({
                         : isCouple
                           ? "var(--edge-color-spouse)"
                           : "var(--edge-color-parent)";
-                    const edgeDash = isCoParent ? "6,4" : isDissolved ? "5,3" : undefined;
+                    const edgeDash = isCoParent ? "var(--edge-dash-co-parent)" : isDissolved ? "var(--edge-dash-dissolved)" : undefined;
                     return (
                       <path key={edge.id} d={d} fill="none"
                         stroke={edgeStroke}
                         strokeWidth={isCouple ? EDGE_STROKE_SPOUSE : EDGE_STROKE_PARENT}
                         strokeDasharray={edgeDash}
                         strokeLinecap="round" strokeLinejoin="round"
-                        strokeOpacity={activeGhostNodeId ? 0.08 : 0.8}
+                        strokeOpacity={activeGhostNodeId ? EDGE_OPACITY_GHOST : EDGE_OPACITY_NORMAL}
                       />
                     );
                   })}
