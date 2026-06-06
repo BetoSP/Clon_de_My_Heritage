@@ -4,7 +4,7 @@ import { COUPLE_TYPES, PARENT_TYPES } from "../graph/relationshipTypes.js";
 import {
   PERSON_W, PERSON_H,
   AVATAR_CX, AVATAR_CY, AVATAR_R, TEXT_X,
-  NODE_RADIUS, NODE_ACCENT_X, NODE_ACCENT_TOP, NODE_ACCENT_W,
+  NODE_RADIUS, NODE_GENDER_BAR_W,
   NODE_SHADOW_DX, NODE_SHADOW_DY,
   NODE_SELECTION_PAD, NODE_SELECTION_RADIUS,
   NODE_BTN_ADD_R, NODE_BTN_ADD_CY,
@@ -106,23 +106,16 @@ function GhostNode({ x, y, label, isFemale, onClick }) {
 function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, onSelect, onAddRelative, onEditPerson, onFocusPerson }) {
   const { x, y } = node;
   const isMale = node.data.gender === "male";
+  const isFemale = node.data.gender === "female";
 
   const accentColor = isFocus ? "var(--node-focus-accent)" : isMale ? "var(--node-male-accent)" : "var(--node-female-accent)";
   const bgColor = isGhostActive ? "var(--node-active-bg)" : isFocus ? "var(--node-focus-bg)" : isMale ? "var(--node-male-bg)" : "var(--node-female-bg)";
   const borderColor = isGhostActive ? (isMale ? "var(--node-active-border-male)" : "var(--node-active-border-female)") : isFocus ? "var(--node-focus-border)" : isMale ? "var(--node-male-border)" : "var(--node-female-border)";
+  const genderBarColor = isMale ? "var(--node-gender-bar-male)" : isFemale ? "var(--node-gender-bar-female)" : "var(--node-gender-bar-unknown)";
 
-  const name = (() => {
-    const n = node.data.name ?? "—";
-    return n.length > NODE_NAME_MAX_CHARS ? n.slice(0, NODE_NAME_MAX_CHARS - 1) + "…" : n;
-  })();
-
-  const surnames = (() => {
-    const s = node.data.surnames ?? null;
-    if (!s) return null;
-    return s.length > NODE_NAME_MAX_CHARS ? s.slice(0, NODE_NAME_MAX_CHARS - 1) + "…" : s;
-  })();
-
-  const dates = node.data.birth_year ? String(node.data.birth_year) : null;
+  const name = node.data.displayName ?? (node.data.name ?? "—");
+  const surnames = node.data.displaySurnames ?? null;
+  const dates = node.data.dateDisplay ?? null;
 
   const badgeCX = x + NODE_BADGE_DX;
   const badgeCY = y + NODE_BADGE_DY;
@@ -138,7 +131,7 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, onSe
       )}
       <rect x={x + NODE_SHADOW_DX} y={y + NODE_SHADOW_DY} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill="var(--node-shadow-color)" />
       <rect x={x} y={y} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill={bgColor} stroke={borderColor} style={{ strokeWidth: (isGhostActive || isFocus) ? "var(--node-active-stroke-w)" : NODE_STROKE_NORMAL }} />
-      <line x1={x + NODE_ACCENT_X} y1={y + NODE_ACCENT_TOP} x2={x + NODE_ACCENT_X} y2={y + PERSON_H - NODE_ACCENT_TOP} stroke={accentColor} strokeWidth={NODE_ACCENT_W} strokeLinecap="round" />
+      <line x1={x + NODE_GENDER_BAR_W / 2} y1={y + NODE_RADIUS} x2={x + NODE_GENDER_BAR_W / 2} y2={y + PERSON_H - NODE_RADIUS} stroke={genderBarColor} strokeWidth={NODE_GENDER_BAR_W} strokeLinecap="butt" />
       <PersonAvatar cx={x + AVATAR_CX} cy={y + AVATAR_CY} r={AVATAR_R} />
       <text x={x + TEXT_X} y={y + 20} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" style={{ fontFamily: "var(--font-family-node)" }}>{name}</text>
       {surnames && <text x={x + TEXT_X} y={y + 33} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" style={{ fontFamily: "var(--font-family-node)" }}>{surnames}</text>}

@@ -27,7 +27,8 @@
 // direct parent→child edges.
 
 import { PARENT_TYPES, COUPLE_TYPES } from "./relationshipTypes.js";
-import { computeDisplaySurnames } from "../utils/personUtils.js";
+import { NODE_NAME_MAX_CHARS } from "./geometry.js";
+import { computeAbbreviatedName, computeAbbreviatedSurnames } from "../utils/personUtils.js";
 
 export function buildFamilyGraph(people, relationships) {
   // ── Step 1: Person nodes ─────────────────────────────────────────────────
@@ -45,15 +46,26 @@ export function buildFamilyGraph(people, relationships) {
 
   for (const person of people) {
     if (personNodeMap.has(person.id)) continue;
+    const by = person.birth_year ?? null;
+    const dy = person.death_year ?? null;
+    let dateDisplay = null;
+    if (by && dy) dateDisplay = `* ${by} — † ${dy}`;
+    else if (by) dateDisplay = `* ${by}`;
+    else if (dy) dateDisplay = `† ${dy}`;
+
     personNodeMap.set(person.id, {
       id: String(person.id),
       type: "person",
       data: {
         name: person.name,
-        surnames: computeDisplaySurnames(person),
+        name_2: person.name_2 ?? null,
+        displayName: computeAbbreviatedName(person.name, person.name_2 ?? null, NODE_NAME_MAX_CHARS),
+        displaySurnames: computeAbbreviatedSurnames(person, NODE_NAME_MAX_CHARS),
         birth_day: person.birth_day ?? null,
         birth_month: person.birth_month ?? null,
-        birth_year: person.birth_year ?? null,
+        birth_year: by,
+        death_year: dy,
+        dateDisplay,
         gender: person.gender,
         adopted: person.adopted ?? false,
         hasHiddenParents: hiddenParentIds.has(person.id),

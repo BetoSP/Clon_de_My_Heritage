@@ -228,6 +228,7 @@ export default function AddRelativeModal({
     const [gender, setGender] = useState(initialGender);
     const [prefix, setPrefix] = useState("");
     const [nombre, setNombre] = useState("");
+    const [nombre2, setNombre2] = useState("");
     const [suffix, setSuffix] = useState("");
     const [surname1, setSurname1] = useState(suggestedSurname1 ?? "");
     const [surname2, setSurname2] = useState(suggestedSurname2 ?? "");
@@ -322,6 +323,7 @@ export default function AddRelativeModal({
 
         const person = {
             name: nombre.trim(),
+            name_2: nombre2.trim() || null,
             surname_1: s1,
             surname_2: s2,
             surname_married: sm,
@@ -468,7 +470,7 @@ export default function AddRelativeModal({
                                         value={opt.value}
                                         checked={gender === opt.value}
                                         onChange={() => setGender(opt.value)}
-                                        disabled={["father", "mother", "son", "daughter", "brother", "sister"].includes(slotType)}
+                                        disabled={slotType.includes("father") || slotType.includes("mother") || slotType === "son" || slotType === "daughter" || slotType === "brother" || slotType === "sister"}
                                     />
                                     {opt.label}
                                 </label>
@@ -481,8 +483,12 @@ export default function AddRelativeModal({
                                 <input className="form-input" type="text" value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="Dr., Sr..." />
                             </div>
                             <div className="modal-field">
-                                <label className="modal-label">Primer y segundo nombre</label>
-                                <input className="form-input" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre/s" autoFocus />
+                                <label className="modal-label">Primer nombre</label>
+                                <input className="form-input" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Primer nombre" autoFocus />
+                            </div>
+                            <div className="modal-field">
+                                <label className="modal-label">Segundo nombre</label>
+                                <input className="form-input" type="text" value={nombre2} onChange={(e) => setNombre2(e.target.value)} placeholder="Segundo nombre (opc.)" />
                             </div>
                             <div className="modal-field modal-field--sm">
                                 <label className="modal-label">Sufijo</label>

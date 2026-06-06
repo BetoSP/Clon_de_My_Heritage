@@ -26,6 +26,7 @@ export const NODE_RADIUS = 8;
 export const NODE_ACCENT_X = 4;
 export const NODE_ACCENT_TOP = 10;
 export const NODE_ACCENT_W = 4;
+export const NODE_GENDER_BAR_W = 4;
 export const NODE_SHADOW_DX = 2;
 export const NODE_SHADOW_DY = 3;
 

@@ -38,6 +38,7 @@ export default function PersonModal({ person, people = [], relationships = [], o
     const [gender, setGender] = useState(isEditing ? (person.gender ?? "male") : "male");
     const [prefix, setPrefix] = useState(isEditing ? (person.prefix ?? "") : "");
     const [nombre, setNombre] = useState(isEditing ? (person.name ?? "") : "");
+    const [nombre2, setNombre2] = useState(isEditing ? (person.name_2 ?? "") : "");
     const [suffix, setSuffix] = useState(isEditing ? (person.suffix ?? "") : "");
     const [surname1, setSurname1] = useState(isEditing ? (person.surname_1 ?? "") : "");
     const [surname2, setSurname2] = useState(isEditing ? (person.surname_2 ?? "") : "");
@@ -88,6 +89,7 @@ export default function PersonModal({ person, people = [], relationships = [], o
         onSave({
             ...(isEditing ? { id: person.id } : {}),
             name: nombre.trim(),
+            name_2: nombre2.trim() || null,
             surname_1: s1,
             surname_2: s2,
             surname_married: sm,
@@ -173,8 +175,12 @@ export default function PersonModal({ person, people = [], relationships = [], o
                         <input className="form-input" type="text" value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="Dr., Sr..." />
                     </div>
                     <div className="modal-field">
-                        <label className="modal-label">Nombre/s</label>
-                        <input className="form-input" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre/s" autoFocus />
+                        <label className="modal-label">Primer nombre</label>
+                        <input className="form-input" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Primer nombre" autoFocus />
+                    </div>
+                    <div className="modal-field">
+                        <label className="modal-label">Segundo nombre</label>
+                        <input className="form-input" type="text" value={nombre2} onChange={(e) => setNombre2(e.target.value)} placeholder="Segundo nombre (opc.)" />
                     </div>
                     <div className="modal-field modal-field--sm">
                         <label className="modal-label">Sufijo</label>

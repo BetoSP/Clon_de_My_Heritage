@@ -100,6 +100,11 @@
   --node-female-border: #fce4ec;
   --node-female-accent: #e91e63;
 
+  /* ── Nodo persona — barra de género ─────────────────────────────────── */
+  --node-gender-bar-male: #2b6cb0;
+  --node-gender-bar-female: #b83280;
+  --node-gender-bar-unknown: #4a5568;
+
   /* ── Nodo persona — foco ─────────────────────────────────────────────── */
   --node-focus-bg: #f5f3ff;
   --node-focus-border: #6d28d9;

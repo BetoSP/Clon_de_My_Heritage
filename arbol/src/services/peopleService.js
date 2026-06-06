@@ -22,7 +22,7 @@ export async function fetchPeopleByIds(ids) {
 }
 
 export async function addPerson({
-  name, surnames, surname_1, surname_2, surname_married, prefix, suffix,
+  name, name_2, surnames, surname_1, surname_2, surname_married, prefix, suffix,
   birth_day, birth_month, birth_year, birth_place,
   gender, adopted,
   is_alive,
@@ -31,7 +31,7 @@ export async function addPerson({
   const { data, error } = await supabase
     .from("people")
     .insert([{
-      name, surnames, surname_1, surname_2, surname_married, prefix, suffix,
+      name, name_2, surnames, surname_1, surname_2, surname_married, prefix, suffix,
       birth_day, birth_month, birth_year, birth_place,
       gender, adopted,
       is_alive,
@@ -46,7 +46,7 @@ export async function addPerson({
 
 export async function updatePerson({
   id,
-  name, surnames, surname_1, surname_2, surname_married, prefix, suffix,
+  name, name_2, surnames, surname_1, surname_2, surname_married, prefix, suffix,
   birth_day, birth_month, birth_year, birth_place,
   gender, adopted,
   is_alive,
@@ -55,7 +55,7 @@ export async function updatePerson({
   const { error } = await supabase
     .from("people")
     .update({
-      name, surnames, surname_1, surname_2, surname_married, prefix, suffix,
+      name, name_2, surnames, surname_1, surname_2, surname_married, prefix, suffix,
       birth_day, birth_month, birth_year, birth_place,
       gender, adopted,
       is_alive,
