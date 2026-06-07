@@ -1,37 +1,4 @@
-// ── Icons ───────────────────────────────────────────────────────────────────
-function IconFamilia() {
-  return (
-    <svg viewBox="0 0 20 20" fill="currentColor" className="icon-md">
-      <path d="M9 12H1v6a2 2 0 002 2h14a2 2 0 002-2v-6h-8v2H9v-2z" />
-      <path d="M13 10V7a1 1 0 00-1-1H8a1 1 0 00-1 1v3H2V8a2 2 0 012-2h1V5a5 5 0 0110 0v1h1a2 2 0 012 2v2h-5z" />
-    </svg>
-  );
-}
-
-function IconCompact() {
-  return (
-    <svg viewBox="0 0 20 20" fill="currentColor" className="icon-md">
-      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function IconFotos() {
-  return (
-    <svg viewBox="0 0 20 20" fill="currentColor" className="icon-md">
-      <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function IconLista() {
-  return (
-    <svg viewBox="0 0 20 20" fill="currentColor" className="icon-md">
-      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h4a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
+// ── Icons ─────────────────────────────────────────────────────────────────────
 function IconSearch() {
   return (
     <svg viewBox="0 0 20 20" fill="currentColor" className="search-icon">
@@ -48,45 +15,29 @@ function IconSettings() {
   );
 }
 
-const VIEW_MODES = [
-  { id: "familia", label: "Vista familiar", Icon: IconFamilia },
-  { id: "compacto", label: "Compacto", Icon: IconCompact },
-  { id: "foto", label: "Fotos", Icon: IconFotos },
-  { id: "lista", label: "Lista", Icon: IconLista },
-];
+function IconContextHelp() {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" className="icon-sm">
+      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+    </svg>
+  );
+}
 
+// ── Props ──────────────────────────────────────────────────────────────────────
+// generationsCount  number          — generaciones a mostrar
+// onGenerationsChange fn(n)         — callback al mover el slider
+// searchQuery       string          — texto de búsqueda
+// onSearchChange    fn(str)         — callback al cambiar búsqueda
 export default function TreeControlPanel({
-  viewMode,
-  onViewModeChange,
   generationsCount,
   onGenerationsChange,
   searchQuery,
   onSearchChange,
-  onAddPerson,
 }) {
   return (
     <div className="control-strip">
 
-      {/* ─ View modes ─ */}
-      <div className="control-strip__section">
-        <span className="control-strip__label">Vista:</span>
-        <div className="view-mode-group">
-          {VIEW_MODES.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              title={label}
-              onClick={() => onViewModeChange(id)}
-              className={`view-mode-btn${viewMode === id ? " view-mode-btn--active" : ""}`}
-            >
-              <Icon />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="control-strip__divider" />
-
-      {/* ─ Generations ─ */}
+      {/* ─ Izquierda: Generaciones ─ */}
       <div className="control-strip__section">
         <span className="control-strip__label">Generaciones:</span>
         <div className="gen-control">
@@ -104,8 +55,8 @@ export default function TreeControlPanel({
 
       <div className="control-strip__divider" />
 
-      {/* ─ Search ─ */}
-      <div className="control-strip__section">
+      {/* ─ Centro: Buscar ─ */}
+      <div className="control-strip__section control-strip__section--grow">
         <div className="search-wrap">
           <IconSearch />
           <input
@@ -121,17 +72,17 @@ export default function TreeControlPanel({
             </button>
           )}
         </div>
-        <button className="strip-icon-btn" title="Configuración">
-          <IconSettings />
-        </button>
       </div>
 
       <div className="control-strip__divider" />
 
-      {/* ─ Agregar persona ─ */}
-      <div className="control-strip__section">
-        <button className="btn-add-person" onClick={onAddPerson} title="Agregar persona sin vinculación">
-          + Agregar persona
+      {/* ─ Derecha: Configuración + Ayuda contextual ─ */}
+      <div className="control-strip__section control-strip__section--right">
+        <button className="strip-icon-btn" title="Configuración del árbol">
+          <IconSettings />
+        </button>
+        <button className="strip-icon-btn" title="Ayuda contextual">
+          <IconContextHelp />
         </button>
       </div>
 

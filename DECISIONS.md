@@ -22,20 +22,11 @@ Cada entrada responde: qué se decidió, por qué, qué se descartó y qué impa
 
 ## [002] — SUPERSEDIDA por [025]
 
-**Estado:** la decisión original de usar solo `spouse` + `until_year` fue revertida.
-Ver decisión [025] para el modelo actual de tipos de relación de pareja.
-
 ---
 
 ## [003] Orden canónico en relaciones simétricas de pareja
 
-**Decisión:** para todos los tipos de `COUPLE_TYPES`, siempre almacenar:
-- `person_a_id < person_b_id`
-
-**Razón:**
-- Evita duplicación de parejas invertidas (A–B vs B–A)
-- Garantiza unicidad estructural del grafo
-- Simplifica queries y generación de union nodes
+**Decisión:** para todos los tipos de `COUPLE_TYPES`, siempre almacenar `person_a_id < person_b_id`.
 
 **Implementación:** `relationshipService.js` aplica `min/max` para todos los `COUPLE_TYPES`.
 
@@ -45,26 +36,9 @@ Ver decisión [025] para el modelo actual de tipos de relación de pareja.
 
 **Decisión:** el árbol genealógico se desarrolla como módulo independiente pero preparado para integrarse al ecosistema Galicia Migrante.
 
-**Estructura del ecosistema:**
-```
-galicia-migrante/
-├── portal/            ← compartido por todos los módulos
-│   ├── auth/
-│   ├── design-system/
-│   ├── payments/
-│   └── i18n/
-├── modulos/
-│   ├── arbol/         ← este módulo
-│   ├── territorio/    ← futuro
-│   └── ...
-```
-
 **Regla de integración:**
 - Si el portal ya tiene el componente → el árbol lo hereda
 - Si no existe → el árbol lo crea en `portal/` para que lo compartan los módulos futuros
-
-**Lo que hereda del portal:** auth, design system, payments, i18n
-**Lo que es propio:** motor de grafo, visualización SVG, servicios de datos, modales genealógicos, barra del módulo
 
 **Interfaz de integración:**
 ```jsx
@@ -75,18 +49,13 @@ galicia-migrante/
 
 ## [005] Relaciones padre → hijo son direccionales
 
-**Decisión:**
-- `person_a_id` = progenitor
-- `person_b_id` = hijo
+**Decisión:** `person_a_id` = progenitor, `person_b_id` = hijo.
 
 ---
 
 ## [006] Modelo temporal de relaciones
 
-**Decisión:** todas las relaciones son temporales:
-- `since_year` = inicio (NULL = desconocido)
-- `until_year` = fin (NULL = activo)
-- `end_reason` = causa del fin (ver [026])
+**Decisión:** `since_year`, `until_year`, `end_reason` en todas las relaciones.
 
 ---
 
@@ -102,11 +71,7 @@ galicia-migrante/
 
 ## [009] Modelo de grafo como núcleo del sistema
 
-**Decisión:** el sistema se basa en un grafo dirigido:
-- `people` → nodos base
-- `relationships` → edges base
-- `union nodes` → nodos derivados en runtime
-- `child_of` → edges derivados desde union nodes cuando aplica
+**Decisión:** `people` → nodos, `relationships` → edges, `union nodes` → derivados, `child_of` → derivados.
 
 ---
 
@@ -120,19 +85,17 @@ galicia-migrante/
 
 **Decisión:** almacenar fechas en tres columnas separadas. Permite fechas parciales.
 
-**Descartado:** columna única de tipo DATE.
-
 ---
 
 ## [012] CRUD completo en servicios
 
-**Decisión:** los servicios exponen operaciones completas. Los componentes nunca llaman a Supabase directamente.
+**Decisión:** los componentes nunca llaman a Supabase directamente — solo desde `services/`.
 
 ---
 
 ## [013] Modales en lugar de formularios en vista principal
 
-**Decisión:** los formularios de carga son modales flotantes. El árbol siempre es el protagonista de la UI.
+**Decisión:** formularios de carga son modales flotantes. El árbol siempre es el protagonista de la UI.
 
 ---
 
@@ -144,7 +107,7 @@ galicia-migrante/
 
 ## [015] Design system heredado del portal
 
-**Decisión:** el módulo árbol no define colores, tipografía ni espaciado propios. Hereda todo del `portal/design-system/`. Mientras el portal no exista, las variables CSS viven en `index.css`.
+**Decisión:** el módulo árbol no define colores, tipografía ni espaciado propios. Mientras el portal no exista, las variables CSS viven en `index.css`.
 
 ---
 
@@ -156,7 +119,7 @@ galicia-migrante/
 
 ---
 
-## [018] Apellidos como campo único — SUPERSEDIDA por [020]
+## [018] — SUPERSEDIDA por [020]
 
 ---
 
@@ -168,7 +131,7 @@ galicia-migrante/
 
 ## [020] Apellidos estructurados en tres campos
 
-**Decisión:** `surname_1`, `surname_2`, `surname_married` en la tabla `people`. `surnames` es calculado en frontend.
+**Decisión:** `surname_1`, `surname_2`, `surname_married` en la tabla `people`. `surnames` calculado en frontend.
 
 ---
 
@@ -182,9 +145,7 @@ galicia-migrante/
 
 ## [022] Sugerencia automática de apellidos
 
-**Decisión:** al agregar un hijo/hija:
-- `surname_1` del hijo = `surname_1` del padre
-- `surname_2` del hijo = `surname_1` de la madre
+**Decisión:** al agregar un hijo/hija: `surname_1` del hijo = `surname_1` del padre; `surname_2` del hijo = `surname_1` de la madre.
 
 ---
 
@@ -196,7 +157,7 @@ galicia-migrante/
 
 ## [024] Layout bottom-up con grupos
 
-**Decisión:** el layout usa dos pasadas: bottom-up (anchos) y top-down (posiciones X). Padres centrados sobre sus hijos.
+**Decisión:** dos pasadas: bottom-up (anchos) y top-down (posiciones X). Padres centrados sobre sus hijos.
 
 ---
 
@@ -253,7 +214,7 @@ stepfather, stepmother, foster_father, foster_mother
 - Si existe `surname_1` → mostrar `surname_1 + " " + surname_2`
 - Si no hay `surname_1` pero hay `surname_married` → mostrar `de surname_married`
 
-**Tipografía:** nombre y apellidos con `fontWeight="700"` — misma tipografía y peso.
+**Tipografía:** nombre y apellidos con `fontWeight="700"`.
 
 ---
 
@@ -267,17 +228,11 @@ stepfather, stepmother, foster_father, foster_mother
 
 **Decisión:** se implementarán como parte del sidebar de persona al estilo MyHeritage.
 
-**Descartado:** click en union node → modal de relación.
-
 ---
 
 ## [034] Nombre en dos campos separados
 
-**Decisión:** separar el nombre de pila en dos campos:
-- `name` → primer nombre de pila
-- `name_2` → segundo nombre de pila (opcional)
-
-**Razón:** consistencia con el modelo de apellidos estructurados. Permite abreviación progresiva independiente de cada campo.
+**Decisión:** `name` (primer nombre) y `name_2` (segundo nombre, opcional).
 
 **Migración Supabase:**
 ```sql
@@ -288,124 +243,158 @@ ALTER TABLE people ADD COLUMN IF NOT EXISTS name_2 text;
 
 ## [035] Abreviación progresiva del nombre en el nodo
 
-**Decisión:** cuando el nombre completo desborda el ancho del nodo, se abrevia progresivamente en este orden:
-
+**Decisión:**
 ```
-Nivel 0: María Concepción Sánchez González   (completo)
-Nivel 1: María Concepción Sánchez G.         (abreviar surname_2)
-Nivel 2: María Concepción S. G.              (abreviar surname_1)
-Nivel 3: María C. S. G.                      (abreviar name_2)
-Nivel 4: M. C. S. G.                         (abreviar name)
-Nivel 5: M. C. S…                            (truncar — último recurso)
+Nivel 0: María Concepción Sánchez González
+Nivel 1: María Concepción Sánchez G.
+Nivel 2: María Concepción S. G.
+Nivel 3: María C. S. G.
+Nivel 4: M. C. S. G.
+Nivel 5: M. C. S…  (último recurso)
 ```
 
-**Razón:** más elegante que truncar con ellipsis — preserva información hasta el último momento.
-
-**Implementación:** función `computeAbbreviatedName` en `personUtils.js`. Calculado en `buildFamilyGraph.js` como `node.data.displayName`.
+**Implementación:** `computeAbbreviatedName` en `personUtils.js`. Calculado en `buildFamilyGraph.js`.
 
 ---
 
 ## [036] Barra del módulo genealógico — estructura de dos filas
 
-**Decisión:** el módulo genealógico tiene una sola barra con dos filas, presente en todas las secciones del módulo:
+**Decisión:** una sola barra con dos filas, presente en todas las secciones del módulo.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ [Logo GM]  [Nombre del árbol ▾] [controles]    [👤 Usuario] [utilidades] │
-├─────────────────────────────────────────────────────────────────┤
-│    Genealogía | Mi Árbol | Fotos | Administrar | Estadísticas   │
-└─────────────────────────────────────────────────────────────────┘
-```
+**Fila 1 — barra oscura:**
+- Logo GM — ocupa la altura completa de las 2 filas
+- Selector de árbol activo (nombre del árbol + dropdown para cambiar entre árboles)
+- 3 iconos NO-MVP deshabilitados con badge "Próximamente":
+  - ⟳ Smart Match
+  - 📋 Record Match
+  - 🧬 Coincidencias de ADN
+- Derecha (heredado del portal — placeholder):
+  - Avatar + nombre del usuario (solo informativo — login desde el portal)
+  - ✉ Mensajes
+  - ⓘ Ayuda ▾ (contextual al módulo activo)
+  - 🌐 Español ▾ (selector de idioma — aplica a todos los módulos)
 
-**Fila 1:**
-- Logo GM (isologotipo único para todo el portal y sus módulos)
-- Selector de árbol activo con nombre definido por el usuario + dropdown para cambiar entre árboles
-- Controles del árbol (sincronizar, privacidad, etc.)
-- Nombre del usuario logueado (solo informativo — login y cuenta se gestionan desde el portal)
-- Utilidades (mensajes, ayuda, idioma)
+**Fila 2 — barra clara:**
+- Logo GM (ocupa ambas filas) con texto "GENEALOGÍA" debajo
+- Menú centrado: Inicio | Árbol | Descubrimientos | Fotos | Investigación | (sin ADN)
+- Extremo derecho: ♿ símbolo de accesibilidad → abre panel flotante
 
-**Fila 2 — Menú de navegación del módulo:**
-- Genealogía → página de inicio del módulo
-- Mi Árbol → vista de linaje (árbol tradicional)
-- Fotos → galería de fotos y documentos
-- Administrar → mis árboles, miembros, importar/exportar, configuración
-- Estadísticas → estadísticas del árbol
+**Panel de accesibilidad ♿:**
+Panel flotante superpuesto con:
+- Control de tamaño de fuente (- 100% +) + restablecer
+- 6 opciones en grilla 2x3: discapacidad visual, daltónicos, ocultar animaciones, vista típica, normalizar fuente, declaración de acceso
+- Selector de idioma en rojo al pie
+- Se cierra con ✕ o click fuera
 
 **Razón:**
 - Un solo menú evita confusión entre contextos
 - El logo lleva siempre al portal
-- "Genealogía" lleva al inicio del módulo — nombre propio sin ambigüedad con "Inicio" del portal
-- El usuario es solo informativo — toda la gestión de cuenta es del portal
-
-**Items NO-MVP** (reservan lugar en el menú, aparecen deshabilitados con badge "Próximamente"):
-- Vista de abanico
-- Vista de lista
-- Descubrimientos (SmartMatch, RecordMatch)
-- Análisis con IA en fotos
-- Investigación (registros históricos)
+- "Inicio" lleva al inicio del módulo genealógico — NO al portal
 
 ---
 
 ## [037] Página de inicio del módulo genealógico
 
-**Decisión:** la página de inicio del módulo (accedida desde "Genealogía" en el menú) sigue el modelo de MyHeritage:
+**Decisión:** la página de inicio (accedida desde "Inicio" en el menú) sigue el modelo de MyHeritage:
 
-**Contenido:**
-- Nombre del árbol (definido por el usuario, campo de texto libre con límite de caracteres)
-- Dueño del árbol + estadísticas: total de personas, total de fotos
-- Espacio para banner (publicitario propio o de terceros — colapsa si no hay contenido)
-- Eventos familiares próximos (cumpleaños, aniversarios en los próximos 30 días)
-- Últimas actividades del árbol
-- Coincidencias encontradas (SmartMatches pendientes — segunda etapa)
+- Banner publicitario (colapsa si no hay contenido, botón "Cerrar")
+- Nombre del árbol como título grande — definido por el usuario
+- Columna izquierda: avatar del dueño + nombre + "Creador del sitio" + estadísticas (personas, fotos) + descripción "Acerca de" + buscador de antepasados
+- Columna derecha: "Actividad reciente" — feed cronológico de cambios en el árbol
 
-**El nombre del árbol** es definido por el usuario y puede ser cualquier texto (ej: "Sanchez Web Site", "Familia García", "Mi árbol"). El límite de caracteres lo define el plan del usuario.
-
-**Razón:** el dashboard de inicio contextualiza al usuario dentro de su árbol y le muestra las acciones más relevantes.
+**Línea de contexto del árbol (debajo de la barra):**
+```
+[Nombre del árbol] | [Persona foco del render]
+```
+- El primer elemento es el nombre del árbol (no necesariamente el dueño)
+- El segundo es la persona foco actual del render
+- Un usuario puede crear el árbol de otra persona
 
 ---
 
-## [038] Menú del módulo genealógico — estructura completa
+## [038] Menú del módulo genealógico — estructura completa con submenús
 
-**Decisión:** estructura completa del menú con indicación de MVP vs futuro:
+**Decisión:** estructura completa basada en análisis de MyHeritage:
 
 ```
 Módulo Genealógico
 │
-├── Genealogía (inicio del módulo — dashboard)       ← MVP
+├── Inicio (dashboard del módulo)                    ← MVP
+│   ├── Eventos familiares                           ← MVP
+│   ├── Estadísticas familiares                      ← MVP
+│   └── Miembros del sitio                           ← MVP
 │
-├── Mi Árbol
-│   ├── Vista de linaje (árbol tradicional)          ← MVP
-│   ├── Vista de abanico                             ← NO MVP
-│   └── Vista de lista                               ← NO MVP
-│
-├── Fotos y Documentos
+├── Árbol
+│   ├── Mi árbol (vista de linaje)                   ← MVP
 │   ├── Mis fotos                                    ← MVP
-│   ├── Mis documentos                               ← MVP
-│   └── Análisis con IA                              ← NO MVP
+│   ├── Administre árboles                           ← MVP
+│   ├── Imprima gráficos y libros                    ← NO MVP
+│   ├── Línea del tiempo                             ← NO MVP
+│   ├── FamilyMap                                    ← NO MVP
+│   ├── Informe de relaciones                        ← NO MVP
+│   └── Fuentes                                      ← NO MVP
 │
 ├── Descubrimientos                                  ← NO MVP
-│   ├── Coincidencias por persona (SmartMatch)
-│   └── Coincidencias por fuente (RecordMatch)
+│   ├── Coincidencias por persona (SmartMatch)       ← NO MVP
+│   └── Coincidencias por fuente (RecordMatch)       ← NO MVP
+│
+├── Fotos
+│   ├── Mis fotos                                    ← MVP
+│   ├── Dé color a sus fotos                         ← NO MVP
+│   ├── Repare fotos                                 ← NO MVP
+│   ├── Deep Nostalgia™                              ← NO MVP
+│   ├── LiveMemory™                                  ← NO MVP
+│   ├── Scribe AI                                    ← NO MVP
+│   └── Video de Homenaje                            ← NO MVP
 │
 ├── Investigación                                    ← NO MVP
-│   ├── Explorar registros históricos
-│   ├── Catálogo de la colección
-│   ├── Nacimiento, matrimonio y defunción
-│   ├── Censos y padrones
-│   ├── Árboles genealógicos
-│   ├── Periódicos
-│   └── Registros de inmigración
+│   ├── Busque todos los registros                   ← NO MVP
+│   ├── Catálogo de la Colección                     ← NO MVP
+│   ├── Nacimiento, Matrimonio y Defunción           ← NO MVP
+│   ├── Registros del Censo                          ← NO MVP
+│   ├── Árboles familiares                           ← NO MVP
+│   ├── Periódicos                                   ← NO MVP
+│   ├── Registros de inmigración                     ← NO MVP
+│   └── Contrate un investigador                     ← NO MVP
 │
-├── Administrar
-│   ├── Mis árboles                                  ← MVP
-│   ├── Miembros del sitio                           ← MVP
-│   ├── Importar / Exportar                          ← MVP
-│   └── Configuración del árbol                     ← MVP
-│
-└── Estadísticas                                     ← MVP
+└── [ADN — NO existe en GM]
 ```
 
-Los ítems NO-MVP aparecen en el menú pero deshabilitados con badge "Próximamente".
+**Notas importantes:**
+- ADN no existe en el menú de GM — está fuera del alcance del proyecto
+- Los ítems NO-MVP aparecen en el menú pero deshabilitados con badge "Próximamente"
+- Los submenús se despliegan al hacer hover/click en el ítem del menú
+
+---
+
+## [039] Vistas del árbol en TreeContextBar (no en TreeControlPanel)
+
+**Decisión:** los iconos de vistas alternativas del árbol (Vista familiar, y NO-MVP) se ubican en el extremo derecho de la línea de contexto — no en la barra de controles.
+
+```
+[Nombre árbol] | [Persona foco]          [Vista familiar ▾] [iconos NO-MVP]
+```
+
+**Razón:** en MyHeritage las vistas están a la derecha de la línea de contexto, no en la barra de herramientas inferior.
+
+---
+
+## [040] Eliminación de "Agregar persona" y "Limpiar foco" de la barra
+
+**Decisión:**
+- El botón "+ Agregar persona" fue eliminado de la barra — no existe en MyHeritage como elemento fijo. Las personas se agregan desde los nodos fantasma del árbol.
+- El botón "Limpiar foco" fue eliminado — no existe en MyHeritage. El foco se maneja navegando el árbol naturalmente.
+
+**Nota:** `handleClearFocus` se mantiene en `App.jsx` — puede activarse por otros medios en el futuro.
+
+---
+
+## [041] Controles del árbol reorganizados
+
+**Decisión:** la barra de controles de la vista del árbol queda:
+- Izquierda: GENERACIONES: 5+ (slider)
+- Centro: [Buscar una persona...] (flex: 1)
+- Derecha: ⚙ Configuración | ❓ Ayuda contextual
 
 ---
 

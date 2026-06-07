@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import GraphView from "./components/GraphView";
-import TopNavBar from "./components/TopNavBar";
+import ModuleNavBar from "./components/ModuleNavBar";
+import ModuleHomePage from "./components/ModuleHomePage";
 import FooterBar from "./components/FooterBar";
 import TreeContextBar from "./components/TreeContextBar";
 import TreeControlPanel from "./components/TreeControlPanel";
@@ -27,6 +28,8 @@ export default function App() {
   const [modalPersona, setModalPersona] = useState(null);
   const [modalRelacion, setModalRelacion] = useState(null);
   const [modalAddRelative, setModalAddRelative] = useState(null);
+  const [activeSection, setActiveSection] = useState("tree");
+  const [activeTree, setActiveTree] = useState({ name: "Mi árbol familiar", ownerName: "Alberto Sanchez Peña" });
 
   const focusInitialized = useRef(false);
   const focusWasCleared = useRef(false);
@@ -409,46 +412,68 @@ export default function App() {
   return (
     <div className="app-shell">
 
-      <TopNavBar />
-
-      <div className="banner-slot">
-        Espacio reservado para banner — si no está en uso, este espacio se colapsa.
-      </div>
-
-      <TreeContextBar
-        treeOwner={null}
-        focusPerson={focusPersonName}
-        selectedPerson={selectedPersonName}
-        totalPersons={people.length}
-        renderedPersons={personCount}
-        onOpenFocusPerson={() => focusPersonId && setSelectedNodeId(focusPersonId)}
-        onClearFocus={handleClearFocus}
+      <ModuleNavBar
+        user={{ name: "Alberto Sanchez Peña" }}
+        trees={[activeTree]}
+        activeTree={activeTree}
+        onTreeChange={setActiveTree}
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
       />
 
-      <TreeControlPanel
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        generationsCount={generationsCount}
-        onGenerationsChange={setGenerationsCount}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onAddPerson={() => setModalPersona("new")}
-      />
-
-      <main className="app-canvas-area">
-        <GraphView
-          graph={graph}
-          onDissolveSpouse={handleDissolveSpouse}
-          focusNodeId={focusPersonId}
-          selectedNodeId={selectedNodeId}
-          onSelectNode={handleSelectNode}
-          onAddRelative={handleAddRelativeFromNode}
-          onEditPerson={handleEditPerson}
-          onDeletePerson={handleDeletePersona}
-          onFocusPerson={handleFocusPerson}
-          searchQuery={searchQuery}
+      {activeSection === "home" && (
+        <ModuleHomePage
+          activeTree={activeTree}
+          onTreeNameChange={(name) => setActiveTree(t => ({ ...t, name }))}
+          people={people}
+          onNavigate={setActiveSection}
         />
-      </main>
+      )}
+
+      {activeSection === "tree" && (
+        <>
+          <TreeContextBar
+            treeName={activeTree.name}
+            focusPerson={focusPersonName}
+            totalPersons={people.length}
+            renderedPersons={personCount}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
+          <TreeControlPanel
+            generationsCount={generationsCount}
+            onGenerationsChange={setGenerationsCount}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+          <main className="app-canvas-area">
+            <GraphView
+              graph={graph}
+              onDissolveSpouse={handleDissolveSpouse}
+              focusNodeId={focusPersonId}
+              selectedNodeId={selectedNodeId}
+              onSelectNode={handleSelectNode}
+              onAddRelative={handleAddRelativeFromNode}
+              onEditPerson={handleEditPerson}
+              onDeletePerson={handleDeletePersona}
+              onFocusPerson={handleFocusPerson}
+              searchQuery={searchQuery}
+            />
+          </main>
+        </>
+      )}
+
+      {activeSection !== "home" && activeSection !== "tree" && (
+        <div className="home-page">
+          <div className="home-section">
+            <h2 className="home-section__title">En desarrollo</h2>
+            <p className="home-empty-msg">Esta sección estará disponible próximamente.</p>
+            <button className="btn-secondary" style={{ marginTop: "var(--spacing-3)" }} onClick={() => setActiveSection("tree")}>
+              Volver al árbol
+            </button>
+          </div>
+        </div>
+      )}
 
       <FooterBar />
 

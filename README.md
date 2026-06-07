@@ -36,17 +36,31 @@ Al integrarse al portal expone un único componente raíz:
 
 Una sola barra con dos filas, presente en todas las secciones:
 
+**Fila 1 — oscura:**
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│ [Logo GM]  [Nombre del árbol ▾] [controles]   [👤 Usuario] [...]  │
-├──────────────────────────────────────────────────────────────────┤
-│   Genealogía | Mi Árbol | Fotos | Administrar | Estadísticas     │
-└──────────────────────────────────────────────────────────────────┘
+[Logo GM] [Nombre árbol ▾] [⟳ NO-MVP] [📋 NO-MVP] [🧬 NO-MVP]    [👤 Usuario] [✉] [Ayuda] [Español]
 ```
 
-- **Logo GM** → único para todo el portal y sus módulos
-- **Genealogía** → página de inicio del módulo (dashboard)
-- **Usuario** → solo informativo; login y cuenta se gestionan desde el portal
+**Fila 2 — clara:**
+```
+[Logo GM]    Inicio | Árbol | Descubrimientos | Fotos | Investigación    [♿]
+```
+
+**Línea de contexto del árbol:**
+```
+[Nombre del árbol] | [Persona foco]                    [Vista familiar] [...]
+```
+
+**Controles del árbol:**
+```
+[GENERACIONES: 5+]    [Buscar una persona...]    [⚙] [❓]
+```
+
+**Notas:**
+- Logo GM ocupa la altura completa de las 2 filas
+- "Inicio" lleva al dashboard del módulo — NO al portal
+- ADN no existe en GM
+- Login y cuenta se gestionan desde el portal
 
 ---
 
@@ -59,7 +73,7 @@ Construir el módulo genealógico más completo, eficiente y profesional posible
 ## ⚙️ Stack tecnológico
 
 - React + Vite
-- CSS Variables (design system compatible con portal futuro)
+- CSS Variables — todo en hexadecimal, cero rgba(), cero hardcoding
 - Supabase (PostgreSQL)
 - GitHub: https://github.com/BetoSP/Clon_de_My_Heritage (branch: master)
 
@@ -72,6 +86,7 @@ people        → nodos base (personas)
 relationships → edges base (relaciones)
 union nodes   → nodos derivados en runtime (vínculos de pareja)
 child_of      → edges derivados cuando ambos padres son pareja
+trees         → árboles familiares del usuario
 derived_relationships → tabla precalculada (pendiente)
 ```
 
@@ -101,7 +116,7 @@ brother, sister
 
 ## ⚙️ Estado funcional actual
 
-✔ CRUD completo de personas (incluyendo name_2) y relaciones
+✔ CRUD completo de personas (name, name_2, surname_1, surname_2, surname_married) y relaciones
 ✔ Motor de grafo con displayName, displaySurnames, dateDisplay, hasHiddenParents
 ✔ Layout engine bottom-up con espaciado simétrico
 ✔ Visualización SVG con pan & zoom
@@ -110,10 +125,14 @@ brother, sister
 ✔ Abreviación progresiva del nombre (5 niveles)
 ✔ Bloqueo automático de género en modal
 ✔ Nodos fantasma con detección de todos los PARENT_TYPES
-✔ Click en nodo → foco: centra vista + barra de contexto
+✔ Click en nodo → foco: centra vista + línea de contexto
 ✔ Badge de vinculación con lógica correcta
 ✔ get_subgraph con hermanos, sin ancestros de cónyuges
-✔ Design system con variables CSS — cero valores hardcodeados
+✔ ModuleNavBar con 2 filas, menú centrado, panel ♿ funcional
+✔ ModuleHomePage — dashboard de inicio del módulo
+✔ Línea de contexto: [árbol] | [foco] + vistas a la derecha
+✔ Controles reorganizados: generaciones | buscar | ⚙ ❓
+✔ Design system — todo en variables CSS hexadecimales
 ✔ Footer minimalista
 
 ---
@@ -127,9 +146,11 @@ src/
 │   ├── PersonModal.jsx
 │   ├── AddRelativeModal.jsx
 │   ├── RelationshipModal.jsx     — pendiente BUG-01
-│   ├── TopNavBar.jsx             — reemplazar por ModuleNavBar
-│   ├── TreeContextBar.jsx
-│   ├── TreeControlPanel.jsx
+│   ├── ModuleNavBar.jsx          — barra del módulo (2 filas)
+│   ├── ModuleHomePage.jsx        — dashboard de inicio
+│   ├── TopNavBar.jsx             — huérfano, pendiente eliminar
+│   ├── TreeContextBar.jsx        — línea de contexto + vistas
+│   ├── TreeControlPanel.jsx      — generaciones + buscar + config
 │   └── FooterBar.jsx
 ├── graph/
 │   ├── buildFamilyGraph.js
@@ -152,10 +173,10 @@ src/
 
 ## 📚 Documentación interna
 
-- `DECISIONS.md` — decisiones de arquitectura (incluye [034]-[038]: name_2, abreviación, barra del módulo, menú)
-- `ENGINE_RULES.md` — reglas del motor de grafo
-- `PROJECT_CONTEXT.md` — estado actual, esquema de DB y pendientes
-- `LEGADO_FUTURO.md` — deuda técnica y funcionalidades futuras
+- `DECISIONS.md` — decisiones de arquitectura [001]-[041]
+- `ENGINE_RULES.md` — reglas del motor de grafo y subgrafo
+- `PROJECT_CONTEXT.md` — estado actual, esquemas de DB y pendientes
+- `LEGADO_FUTURO.md` — deuda técnica y funcionalidades futuras con submenús NO-MVP detallados
 - `CLAUDE.md` — instrucciones base para Claude Code
 - `myheritage.md` — referencia técnica completa v3.0
 

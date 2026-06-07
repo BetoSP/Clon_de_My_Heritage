@@ -21,6 +21,9 @@
   /* ── Neutrales oscuros (chrome bar) ─────────────────────────────────── */
   --color-chrome-bg: #1a1a2e;
   --color-chrome-border: #252540;
+  --color-chrome-text: #cbd5e0;
+  --chrome-overlay-subtle: #ffffff12;
+  --chrome-overlay-hover: #ffffff1f;
   --color-border-dark: #2d3748;
   --color-border-darker: #4a5568;
 
@@ -188,6 +191,7 @@
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "SFMono-Regular", monospace;
 
+  --font-size-2xs: 8.5px;
   --font-size-xs: 10px;
   --font-size-sm: 11px;
   --font-size-base: 12px;
@@ -238,6 +242,7 @@
   --width-logo-icon: 28px;
   --width-dissolve-input: 70px;
   --nav-logo-min-width: 180px;
+  --module-nav-logo-w: 96px;
   --gen-value-min-width: 26px;
   --modal-max-width: 480px;
   --canvas-min-height: 400px;

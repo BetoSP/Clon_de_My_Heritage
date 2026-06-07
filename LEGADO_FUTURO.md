@@ -46,34 +46,41 @@ El slider existe en la UI pero no tiene efecto sin foco activo.
 
 ---
 
-## 🖥️ Menú del módulo — items NO-MVP
+## 🖥️ Menú del módulo — items NO-MVP detallados
 
-Los siguientes ítems del menú están reservados pero no implementados en MVP. Aparecen deshabilitados con badge "Próximamente":
+Los siguientes ítems están reservados pero no implementados. Aparecen en el menú deshabilitados con badge "Próximamente". Basado en análisis exhaustivo de MyHeritage (Junio 2026).
 
-### Vista de abanico (Mi Árbol)
-Vista del árbol en semicírculo concéntrico. Ver especificación en `myheritage.md` sección 43.
+### Submenú Árbol — items NO-MVP
+- **Imprima gráficos y libros** — exportación del árbol como PDF/poster y libros genealógicos
+- **Línea del tiempo** — cronología de eventos con contexto histórico gallego (tercera etapa)
+- **FamilyMap** — mapa geográfico de orígenes y migraciones (tercera etapa, requiere Neo4j)
+- **Informe de relaciones** — calcula el parentesco entre dos personas del árbol
+- **Fuentes** — gestión de fuentes y citas documentales
 
-### Vista de lista (Mi Árbol)
-Vista tabular de todas las personas del árbol con filtros avanzados.
+### Submenú Descubrimientos — TODO NO-MVP (tercera etapa)
+- **Coincidencias por persona (SmartMatch)** — requiere masa crítica de usuarios y motor de matching
+- **Coincidencias por fuente (RecordMatch)** — requiere repositorio de registros históricos
 
-### Descubrimientos (sección completa)
-- Coincidencias por persona (SmartMatch)
-- Coincidencias por fuente (RecordMatch)
-Requiere Smart Matching — tercera etapa.
+### Submenú Fotos — items NO-MVP
+- **Dé color a sus fotos** — colorización IA (DeOldify/DDColor) — tercera etapa
+- **Repare fotos** — restauración de daños con IA — tercera etapa
+- **Deep Nostalgia™** — animación de rostros históricos — tercera etapa
+- **LiveMemory™** — videos de homenaje con IA — tercera etapa
+- **Scribe AI** — transcripción de documentos manuscritos con IA — tercera etapa
+- **Video de Homenaje** — creación de videos conmemorativos — tercera etapa
 
-### Análisis con IA (Fotos y Documentos)
-Pipeline de IA para fotos: mejorar nitidez, colorear, animar rostros.
-Ver especificación completa en `myheritage.md` sección 47. Tercera etapa.
+### Submenú Investigación — TODO NO-MVP (tercera etapa)
+- **Busque todos los registros** — motor de búsqueda unificado de registros históricos
+- **Catálogo de la Colección** — índice del repositorio propio
+- **Nacimiento, Matrimonio y Defunción** — registros civiles y eclesiásticos
+- **Registros del Censo** — padrones históricos
+- **Árboles familiares** — búsqueda en árboles de otros usuarios
+- **Periódicos** — hemeroteca histórica
+- **Registros de inmigración** — manifiestos de barcos, CEMLA, AGN
+- **Contrate un investigador** — servicio de investigación profesional
 
-### Investigación (sección completa)
-- Explorar registros históricos
-- Catálogo de la colección
-- Nacimiento, matrimonio y defunción
-- Censos y padrones
-- Árboles genealógicos
-- Periódicos
-- Registros de inmigración
-Requiere repositorio propio de registros históricos — tercera etapa.
+### ADN — NO EXISTE EN GM
+El módulo ADN de MyHeritage (con submenús: Resumen, Estimación Étnica, Coincidencias de ADN, cM Explainer™, Poblaciones Fundadoras, Mapa étnico, Comprar kits, Privacidad) está completamente fuera del alcance del proyecto Galicia Migrante. No aparece en el menú.
 
 ---
 
@@ -97,6 +104,12 @@ Campo `birth_order INTEGER` en `relationships` para ordenar hijos explícitament
 
 ### Migración del campo `adopted`
 Obsoleto — ver DECISIONS [027]. Migrar a tipos de relación explícitos.
+
+### Conectar tabla trees con people y relationships
+Agregar `tree_id` a las tablas `people` y `relationships` para soporte multi-árbol real.
+
+### Panel ♿ — tamaño de fuente no aplica al SVG
+El panel de accesibilidad modifica el tamaño de fuente del DOM pero no afecta el canvas SVG del árbol. Requiere un sistema de temas que propague el cambio al SVG.
 
 ---
 
@@ -127,7 +140,7 @@ Especificación completa en `myheritage.md` sección 45.
 - Encabezado: foto 120x120px, nombre, edad, botones [Árbol] y [Editar]
 - Datos biográficos con edición inline
 - Matrimonios con link al cónyuge
-- Familia inmediata navegable
+- Familia inmediata navegable (padres, hermanos, cónyuge/s, hijos)
 - Eventos de vida cronológicos
 - Fuentes y documentos vinculados
 
@@ -209,12 +222,7 @@ Verificación lógica de fechas imposibles, edades implausibles y relaciones cir
 
 - Almacenamiento en Supabase Storage
 - FaceTaggerOverlay con efecto cruzado bidireccional
-
----
-
-## 🤖 Pipeline de IA para fotos (tercera etapa)
-
-Ver `myheritage.md` sección 47.
+- Ver especificación completa en `myheritage.md` sección 47
 
 ---
 
@@ -241,7 +249,7 @@ Flujo de registro ligado a la creación del primer núcleo familiar. Ver `myheri
 
 ## 💰 Paywall (segunda etapa)
 
-Límite configurable de personas por plan. Blur + modal al alcanzar el límite. Ver `myheritage.md` sección 50.
+Límite configurable de personas por plan. El límite aplica sobre el total de personas únicas en todos los árboles del usuario. Blur + modal al alcanzar el límite. Ver `myheritage.md` sección 50.
 
 ---
 
@@ -273,7 +281,7 @@ Algoritmo de similitud + UI de confirmación y fusión.
 
 ## 🌐 Integración al ecosistema Galicia Migrante
 
-**Condición para integrar:** barra del módulo, página de inicio, sidebar, GEDCOM, tipos parentales completos, perfil extendido, campos territoriales básicos.
+**Condición para integrar:** árbol con CRUD completo, barra del módulo, página de inicio, sidebar, GEDCOM, tipos parentales completos, perfil extendido, campos territoriales básicos.
 
 **Módulos futuros:**
 - Tu lugar en Galicia

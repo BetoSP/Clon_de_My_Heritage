@@ -31,29 +31,28 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 ✔ Centrado automático del árbol al cargar
 ✔ Nodos fantasma para agregar familiares
 ✔ Modal agregar familiar con buscador en tiempo real
-✔ Buscador de persona existente para padre, madre y cónyuge
 ✔ 7 COUPLE_TYPES y 8 PARENT_TYPES implementados
 ✔ Visualización diferenciada por tipo de relación
-✔ co_parent con línea punteada violeta
 ✔ Barra de género en nodo (franja vertical 4px por género)
 ✔ Símbolos genealógicos en fechas (* nacimiento, † fallecimiento)
 ✔ Abreviación progresiva del nombre en el nodo (5 niveles)
 ✔ Bloqueo automático de género en modal al seleccionar Padre/Madre
 ✔ Foco por defecto en primera persona al cargar
-✔ Click en nodo → activa foco: centra vista + actualiza barra de contexto
+✔ Click en nodo → activa foco: centra vista + actualiza línea de contexto
 ✔ Badge de vinculación con lógica correcta (hasHiddenParents || unionCount > 1)
 ✔ Subgrafo por foco via RPC get_subgraph (incluye hermanos, excluye ancestros de cónyuges)
-✔ Barra de contexto con persona foco, persona seleccionada y botón limpiar foco
+✔ Línea de contexto: [Nombre del árbol] | [Persona foco] + vistas a la derecha
 ✔ Apellidos estructurados: surname_1, surname_2, surname_married
-✔ Apellidos en nodo: lógica display correcta
 ✔ computeDisplaySurnames, computeFullSurnames, computeAbbreviatedName en personUtils.js
-✔ Sugerencia automática de apellidos basada en progenitores
-✔ Design system con variables CSS — cero valores hardcodeados
+✔ Design system con variables CSS — cero valores hardcodeados — solo hex
 ✔ Constantes dimensionales en geometry.js
 ✔ Espaciado simétrico entre generaciones
 ✔ getVacantSlots detecta todos los PARENT_TYPES
 ✔ Footer minimalista implementado
-✔ Regla del subgrafo documentada en ENGINE_RULES.md
+✔ ModuleNavBar implementado (2 filas, logo ocupa ambas, menú centrado)
+✔ Panel de accesibilidad ♿ funcional
+✔ Página de inicio del módulo (ModuleHomePage — dashboard)
+✔ Tabla `trees` en Supabase con RLS
 
 ---
 
@@ -75,27 +74,31 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 
 ### Barra del módulo (2 filas, presente en todas las secciones)
 
-**Fila 1:**
-- Logo GM (isologotipo único del portal)
-- Selector de árbol activo (nombre definido por el usuario + dropdown)
-- Controles del árbol
-- Nombre del usuario logueado (solo informativo)
-- Utilidades (mensajes, ayuda, idioma)
+**Fila 1 — barra oscura:**
+- Logo GM (ocupa altura de ambas filas)
+- Selector de árbol activo + dropdown
+- 3 iconos NO-MVP deshabilitados: Smart Match | Record Match | ADN
+- Derecha (portal): usuario | ✉ | Ayuda | Español
 
-**Fila 2 — Menú:**
-- Genealogía (inicio del módulo)
-- Mi Árbol
-- Fotos
-- Administrar
-- Estadísticas
+**Fila 2 — barra clara:**
+- Menú centrado: Inicio | Árbol | Descubrimientos | Fotos | Investigación
+- Extremo derecho: ♿ → panel de accesibilidad
 
-### Página de inicio del módulo
-- Nombre del árbol
-- Dueño + estadísticas (personas, fotos)
+### Línea de contexto del árbol
+```
+[Nombre del árbol] | [Persona foco]          [Vista familiar] [vistas NO-MVP]
+```
+
+### Controles del árbol
+```
+[GENERACIONES: 5+]    [Buscar una persona...]    [⚙] [❓]
+```
+
+### Página de inicio del módulo (Inicio)
 - Banner publicitario (colapsa si no hay)
-- Eventos próximos (30 días)
-- Últimas actividades
-- Coincidencias pendientes (segunda etapa)
+- Nombre del árbol como título grande
+- Col. izquierda: dueño + estadísticas + descripción + buscador
+- Col. derecha: actividad reciente
 
 ---
 
@@ -129,6 +132,19 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 
 ---
 
+## 🗄️ Esquema tabla trees (actual)
+
+| columna    | tipo        | notas                          |
+|------------|-------------|--------------------------------|
+| id         | bigint      | PK                             |
+| name       | text        | nombre del árbol (editable)    |
+| owner_name | text        | nombre del dueño               |
+| created_at | timestamptz |                                |
+
+RLS habilitado. Un usuario puede tener múltiples árboles. El límite del plan aplica sobre el total de personas únicas en todos sus árboles.
+
+---
+
 ## 🗄️ Esquema tabla relationships (actual)
 
 | columna        | tipo        | notas                                              |
@@ -147,7 +163,7 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 | marriage_year  | integer     | opcional                                           |
 | created_at     | timestamptz |                                                    |
 
-### Tipos válidos en relationships.type
+### Tipos válidos
 
 **COUPLE_TYPES:** `married`, `partner`, `co_parent`, `separated`, `divorced`, `widowed`, `unknown`
 
@@ -177,9 +193,11 @@ src/
 │   ├── PersonModal.jsx
 │   ├── AddRelativeModal.jsx
 │   ├── RelationshipModal.jsx     — inaccesible (BUG-01, diferido al sidebar)
-│   ├── TopNavBar.jsx             — reemplazar por ModuleNavBar
-│   ├── TreeContextBar.jsx
-│   ├── TreeControlPanel.jsx
+│   ├── ModuleNavBar.jsx          — barra del módulo (2 filas)
+│   ├── ModuleHomePage.jsx        — página de inicio del módulo
+│   ├── TopNavBar.jsx             — huérfano, pendiente eliminar
+│   ├── TreeContextBar.jsx        — línea de contexto + vistas
+│   ├── TreeControlPanel.jsx      — generaciones + buscar + config + ayuda
 │   └── FooterBar.jsx
 ├── graph/
 │   ├── buildFamilyGraph.js
@@ -203,16 +221,17 @@ src/
 ## 🚧 Pendiente de implementación — en orden de prioridad
 
 ### Inmediato
-- Barra del módulo (ModuleNavBar — 2 filas)
-- Página de inicio del módulo (dashboard genealógico)
+- Submenús desplegables en el menú del módulo
 - Avatar con fallback diferenciado por género (3 siluetas)
 - Sidebar de persona (ProfileDrawer) — resuelve BUG-01 y BUG-02
+- Eliminar TopNavBar.jsx (huérfano)
 
 ### Base de datos
 - Trigger de integridad genealógica en Supabase
 - Auditoría y creación de índices faltantes
 - Migración del campo `adopted` al tipo de relación
 - Tipos parentales extendidos en constraint Supabase
+- Conectar tabla `trees` con `people` y `relationships` (tree_id)
 
 ### Features del módulo
 - Sistema de foco completo (badge xN → popup de contextos)
