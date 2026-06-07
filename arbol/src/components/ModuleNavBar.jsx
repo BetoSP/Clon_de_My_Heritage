@@ -58,16 +58,55 @@ function Caret() {
   );
 }
 
-// ── Estructura del menú ───────────────────────────────────────────────────────
+// ── Datos del menú ────────────────────────────────────────────────────────────
 const TOP_MENU = [
-  { id: "home",        label: "Inicio",          mvp: true  },
-  { id: "tree",        label: "Árbol",            mvp: true  },
-  { id: "discoveries", label: "Descubrimientos",  mvp: false },
-  { id: "photos",      label: "Fotos",            mvp: true  },
-  { id: "research",    label: "Investigación",    mvp: false },
-  { id: "admin",       label: "Administrar",      mvp: true  },
-  { id: "stats",       label: "Estadísticas",     mvp: true  },
+  { id: "home",        label: "Inicio",          mvp: true,  hasSub: true  },
+  { id: "tree",        label: "Árbol",            mvp: true,  hasSub: true  },
+  { id: "discoveries", label: "Descubrimientos",  mvp: false, hasSub: true  },
+  { id: "photos",      label: "Fotos",            mvp: true,  hasSub: true  },
+  { id: "research",    label: "Investigación",    mvp: false, hasSub: true  },
 ];
+
+const SUBMENUS = {
+  home: [
+    { label: "Eventos familiares",      sectionId: "home", mvp: true  },
+    { label: "Estadísticas familiares", sectionId: "home", mvp: true  },
+    { label: "Miembros del sitio",      sectionId: "home", mvp: true  },
+  ],
+  tree: [
+    { label: "Mi árbol",                sectionId: "tree",   mvp: true  },
+    { label: "Mis fotos",               sectionId: "photos", mvp: true  },
+    { label: "Administre árboles",      sectionId: "admin",  mvp: true  },
+    { label: "Imprima gráficos y libros", sectionId: null,   mvp: false },
+    { label: "Línea del tiempo",        sectionId: null,     mvp: false },
+    { label: "FamilyMap",               sectionId: null,     mvp: false },
+    { label: "Informe de relaciones",   sectionId: null,     mvp: false },
+    { label: "Fuentes",                 sectionId: null,     mvp: false },
+  ],
+  discoveries: [
+    { label: "Coincidencias por persona", sectionId: null,   mvp: false },
+    { label: "Coincidencias por fuente",  sectionId: null,   mvp: false },
+  ],
+  photos: [
+    { label: "Mis fotos",               sectionId: "photos", mvp: true  },
+    { label: "Dé color a sus fotos",    sectionId: null,     mvp: false },
+    { label: "Repare fotos",            sectionId: null,     mvp: false },
+    { label: "Deep Nostalgia™",         sectionId: null,     mvp: false },
+    { label: "LiveMemory™",             sectionId: null,     mvp: false },
+    { label: "Scribe AI",               sectionId: null,     mvp: false },
+    { label: "Video de Homenaje",       sectionId: null,     mvp: false },
+  ],
+  research: [
+    { label: "Busque todos los registros",         sectionId: null, mvp: false },
+    { label: "Catálogo de la Colección",           sectionId: null, mvp: false },
+    { label: "Nacimiento, Matrimonio y Defunción", sectionId: null, mvp: false },
+    { label: "Registros del Censo",                sectionId: null, mvp: false },
+    { label: "Árboles familiares",                 sectionId: null, mvp: false },
+    { label: "Periódicos",                         sectionId: null, mvp: false },
+    { label: "Registros de inmigración",           sectionId: null, mvp: false },
+    { label: "Contrate un investigador",           sectionId: null, mvp: false },
+  ],
+};
 
 const A11Y_OPTIONS = [
   "Discapacidad visual",
@@ -86,6 +125,7 @@ const A11Y_OPTIONS = [
 // onNavigate   fn(sectionId)            — callback de navegación
 export default function ModuleNavBar({ user, trees = [], activeTree, onTreeChange, activeSection, onNavigate }) {
   const [treeMenuOpen, setTreeMenuOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null);
   const [a11yOpen, setA11yOpen] = useState(false);
   const [fontSize, setFontSize] = useState(100);
   const a11yRef = useRef(null);
@@ -180,22 +220,57 @@ export default function ModuleNavBar({ user, trees = [], activeTree, onTreeChang
         <nav className="module-nav__menu">
           <div className="module-nav__menu-items">
             {TOP_MENU.map(item => (
-              <a
+              <div
                 key={item.id}
-                href="#"
-                className={[
-                  "main-nav__link",
-                  activeSection === item.id ? "main-nav__link--active" : "",
-                  !item.mvp ? "main-nav__link--disabled" : "",
-                ].filter(Boolean).join(" ")}
-                onClick={(e) => { e.preventDefault(); if (item.mvp) onNavigate?.(item.id); }}
-                aria-disabled={!item.mvp}
-                tabIndex={!item.mvp ? -1 : undefined}
-                title={!item.mvp ? "Próximamente" : undefined}
+                className="nav-item"
+                onMouseEnter={() => item.hasSub && setOpenMenu(item.id)}
+                onMouseLeave={() => setOpenMenu(null)}
               >
-                {item.label}
-                {!item.mvp && <span className="module-nav__badge-soon">Próxim.</span>}
-              </a>
+                {/* Link principal del ítem */}
+                <a
+                  href="#"
+                  className={[
+                    "main-nav__link",
+                    activeSection === item.id ? "main-nav__link--active" : "",
+                    !item.mvp ? "main-nav__link--disabled" : "",
+                  ].filter(Boolean).join(" ")}
+                  onClick={(e) => { e.preventDefault(); if (item.mvp) onNavigate?.(item.id); }}
+                  aria-disabled={!item.mvp}
+                  tabIndex={!item.mvp ? -1 : undefined}
+                  title={!item.mvp ? "Próximamente" : undefined}
+                >
+                  {item.label}
+                  {item.hasSub && <Caret />}
+                  {!item.mvp && <span className="module-nav__badge-soon">Próxim.</span>}
+                </a>
+
+                {/* Submenú desplegable */}
+                {item.hasSub && openMenu === item.id && SUBMENUS[item.id] && (
+                  <div className="nav-dropdown">
+                    {SUBMENUS[item.id].map(sub => (
+                      <a
+                        key={sub.label}
+                        href="#"
+                        className={[
+                          "nav-dropdown__item",
+                          !sub.mvp ? "nav-dropdown__item--disabled" : "",
+                        ].filter(Boolean).join(" ")}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (sub.mvp && sub.sectionId) {
+                            onNavigate?.(sub.sectionId);
+                            setOpenMenu(null);
+                          }
+                        }}
+                        tabIndex={!sub.mvp ? -1 : undefined}
+                      >
+                        <span>{sub.label}</span>
+                        {!sub.mvp && <span className="module-nav__badge-soon">Próxim.</span>}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
 
@@ -219,7 +294,6 @@ export default function ModuleNavBar({ user, trees = [], activeTree, onTreeChang
 
                 <div className="a11y-panel__body">
 
-                  {/* Tamaño de fuente */}
                   <div className="a11y-panel__section">
                     <span className="a11y-panel__label">Tamaño de fuente</span>
                     <div className="a11y-panel__font-ctrl">
@@ -230,7 +304,6 @@ export default function ModuleNavBar({ user, trees = [], activeTree, onTreeChang
                     </div>
                   </div>
 
-                  {/* Opciones de accesibilidad */}
                   <div className="a11y-panel__section">
                     {A11Y_OPTIONS.map(label => (
                       <label key={label} className="a11y-panel__option">
@@ -240,7 +313,6 @@ export default function ModuleNavBar({ user, trees = [], activeTree, onTreeChang
                     ))}
                   </div>
 
-                  {/* Declaración y idioma */}
                   <div className="a11y-panel__section">
                     <a href="#" className="a11y-panel__link">Declaración de acceso</a>
                     <div>
