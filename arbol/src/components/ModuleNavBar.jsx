@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, forwardRef } from "react";
 
 // ── Iconos ────────────────────────────────────────────────────────────────────
 function IconTree() {
@@ -123,7 +123,7 @@ const A11Y_OPTIONS = [
 // onTreeChange fn(tree)                 — callback al cambiar árbol
 // activeSection string                  — sección activa ("home"|"tree"|...)
 // onNavigate   fn(sectionId)            — callback de navegación
-export default function ModuleNavBar({ user, trees = [], activeTree, onTreeChange, activeSection, onNavigate }) {
+const ModuleNavBar = forwardRef(function ModuleNavBar({ user, trees = [], activeTree, onTreeChange, activeSection, onNavigate }, ref) {
   const [treeMenuOpen, setTreeMenuOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
   const [a11yOpen, setA11yOpen] = useState(false);
@@ -146,7 +146,7 @@ export default function ModuleNavBar({ user, trees = [], activeTree, onTreeChang
   const initials = userName.split(" ").filter(Boolean).map(w => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <header className="module-nav">
+    <header ref={ref} className="module-nav">
 
       {/* ── Logo — columna izquierda, abarca ambas filas ─────────────────── */}
       <div className="module-nav__logo-col">
@@ -334,4 +334,6 @@ export default function ModuleNavBar({ user, trees = [], activeTree, onTreeChang
       </div>
     </header>
   );
-}
+});
+
+export default ModuleNavBar;

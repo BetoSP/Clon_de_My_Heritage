@@ -28,11 +28,11 @@ galicia-migrante/
 
 ## 🐛 Bugs conocidos
 
-### [BUG-01] CRUD de relaciones inaccesible desde la UI
-Diferido a la implementación del sidebar completo al estilo MyHeritage.
+### [BUG-01] ✅ RESUELTO — CRUD de relaciones inaccesible desde la UI
+Resuelto en PROMPT_013. El ProfileDrawer expone la familia inmediata navegable y los botones de disolución/eliminación de pareja.
 
-### [BUG-02] Edición de relaciones y disolución de pareja sin UI
-`DissolveCell` definido pero nunca renderizado. Se implementará en el sidebar de persona.
+### [BUG-02] ✅ RESUELTO — Edición de relaciones y disolución de pareja sin UI
+Resuelto en PROMPT_013_FIX_A. DissolveCell eliminado de GraphView.jsx. La disolución y eliminación de pareja viven en el ProfileDrawer sección familia inmediata.
 
 ### [BUG-03] Pérdida de filiación visual — hijos casados como secundarios (líneas diagonales)
 **Causa raíz:** `isSecondaryInGroup` en `layoutFamilyGraph.js` → `getSortedChildren()`.
@@ -43,6 +43,35 @@ Nodos fantasma parcialmente ocultos cuando el nodo activo está cerca del borde 
 
 ### [BUG-05] Slider de generaciones no filtra sin foco activo
 El slider existe en la UI pero no tiene efecto sin foco activo.
+
+### [BUG-06] Botón de cierre del ghost mode no visible
+Al activar el modo fantasma (click en botón + del nodo), no hay forma visible de cancelarlo sin agregar un familiar. Falta un botón de cierre claro.
+
+### [BUG-07] Nodos fantasma aparecen lejos del nodo activo
+Los nodos fantasma deberían aparecer en las proximidades del nodo activo, no en el extremo de la pantalla.
+
+### [BUG-08] Doble estado visual violeta inconsistente
+El nodo seleccionado (línea punteada violeta) y el nodo foco (borde sólido violeta) pueden quedar en nodos distintos, generando confusión visual al usuario. Revisar sincronización de `selectedNodeId` y `focusPersonId` al hacer click.
+**Nota:** la línea punteada fue eliminada temporalmente (ver BUG-10).
+
+### [BUG-09] Indicador visual de foco — solución definitiva pendiente
+Resuelto temporalmente con `filter: drop-shadow(0 0 3px var(--color-primary-dark))` via variable `--node-focus-glow`. Pendiente: decidir si el glow es la solución definitiva o si se quiere un indicador adicional.
+
+### [BUG-10] Línea punteada violeta de selección eliminada temporalmente
+El bloque `isSelected && !isGhostActive` con `strokeDasharray` fue eliminado de PersonNode. Las variables `--node-selection-bg`, `--node-selection-border`, `--node-selection-dash` quedan en index.css sin uso activo. Pendiente: rediseñar el indicador de selección.
+
+---
+
+## ⚡ Mejoras de performance
+
+### [MEJORA-01] Optimizar recarga de subgrafo al cambiar foco
+Actualmente cada click en un nodo dispara una query RPC a Supabase para recargar el subgrafo completo. En árboles grandes esto genera lag perceptible.
+
+**Alternativas a evaluar:**
+- Doble click para cambiar foco (single click solo centra la vista y abre el drawer sin recargar)
+- Cachear subgrafos ya cargados en memoria
+- Cargar el árbol completo una vez y filtrar en frontend según el foco
+- Revisar cómo maneja esto MyHeritage
 
 ---
 
@@ -130,21 +159,21 @@ Permite búsquedas multi-salto eficientes a escala.
 
 ---
 
-## 🖥️ Sidebar de persona (ProfileDrawer) — próximo bloque de trabajo
+## 🖥️ Sidebar de persona (ProfileDrawer) — ✅ IMPLEMENTADO
 
-Especificación completa en `myheritage.md` sección 45.
+**Implementado en:** PROMPT_013, PROMPT_013_FIX_A, PROMPT_014, PROMPT_014_FIX_A, PROMPT_014_FIX_B
 
-**Detonador:** click simple en zona neutra de la tarjeta de persona.
+**Estado actual:** funcional. Pendientes de pulir:
+- Proporciones visuales (posicionamiento fino)
+- Flechita de cierre — pulir detalle visual
+- Avatar circular en encabezado
+- Subtítulo dinámico (parentesco calculado en lugar de "Este es usted")
+- Botones "Perfil" y "Agregar" sin funcionalidad real (placeholders)
+- Secciones Descubrimientos, Fotos y Fuentes son placeholders MVP
 
-**Contenido:**
-- Encabezado: foto 120x120px, nombre, edad, botones [Árbol] y [Editar]
-- Datos biográficos con edición inline
-- Matrimonios con link al cónyuge
-- Familia inmediata navegable (padres, hermanos, cónyuge/s, hijos)
-- Eventos de vida cronológicos
-- Fuentes y documentos vinculados
-
-**Resuelve:** BUG-01 y BUG-02.
+**Pendiente post-auth:**
+- Pedir contraseña antes de eliminar relación
+- Tabla de auditoría de eliminaciones
 
 ---
 
@@ -250,6 +279,24 @@ Flujo de registro ligado a la creación del primer núcleo familiar. Ver `myheri
 ## 💰 Paywall (segunda etapa)
 
 Límite configurable de personas por plan. El límite aplica sobre el total de personas únicas en todos los árboles del usuario. Blur + modal al alcanzar el límite. Ver `myheritage.md` sección 50.
+
+---
+
+## 📱 Responsividad
+
+Pendiente de implementar cuando el módulo esté funcionalmente completo y antes de integrar al portal.
+
+**Etapa 1 — Tablet (768px+):** drawer, modales y barra funcionales en tablet. El árbol en tablet es usable.
+**Etapa 2 — Mobile (360px+):** vista alternativa del árbol para mobile (lista navegable o vista simplificada del SVG).
+
+---
+
+## 🔐 Auditoría de eliminación de relaciones
+
+Cuando el auth del portal esté implementado:
+- Pedir contraseña antes de confirmar eliminación de relación de pareja
+- Guardar en tabla de log: quién eliminó, qué relación, cuándo, desde qué IP
+- Permite revertir eliminaciones maliciosas o accidentales
 
 ---
 

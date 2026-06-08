@@ -1,0 +1,307 @@
+/* ── PersonModal — Edición de persona ─────────────────────────────────────── */
+
+.pm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-5);
+}
+
+.pm-card {
+  background: var(--color-nav-bg);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.pm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4) var(--spacing-5);
+  border-bottom: 1px solid var(--color-border-light);
+  flex-shrink: 0;
+  gap: var(--spacing-3);
+}
+
+.pm-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-close {
+  width: var(--height-btn);
+  height: var(--height-btn);
+  border: none;
+  background: var(--color-bg-soft);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-md);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.pm-close:hover {
+  background: var(--color-border-light);
+  color: var(--color-text-primary);
+}
+
+/* ── Body — dos columnas ─────────────────────────────────────────────────── */
+
+.pm-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Columna izquierda */
+.pm-left-col {
+  width: 110px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-5) var(--spacing-3);
+  gap: var(--spacing-2);
+  border-right: 1px solid var(--color-border-light);
+  background: var(--color-bg-subtle);
+}
+
+.pm-avatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pm-person-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-align: center;
+  word-break: break-word;
+  line-height: var(--line-height-tight);
+}
+
+.pm-person-year {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Columna derecha */
+.pm-right-col {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-4) var(--spacing-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  min-width: 0;
+}
+
+/* ── Grupos de campos ────────────────────────────────────────────────────── */
+
+.pm-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.pm-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pm-input {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2) 10px;
+  font-size: var(--font-size-md);
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background: var(--color-nav-bg);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pm-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.pm-input--year {
+  width: 74px;
+  flex-shrink: 0;
+}
+
+.pm-select {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2) 8px;
+  font-size: var(--font-size-md);
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background: var(--color-nav-bg);
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pm-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.pm-select--precision {
+  min-width: 134px;
+  flex-shrink: 0;
+}
+
+.pm-select--day {
+  width: 68px;
+  flex-shrink: 0;
+}
+
+.pm-select--month {
+  width: 68px;
+  flex-shrink: 0;
+}
+
+/* Fila de dos campos lado a lado */
+.pm-row {
+  display: flex;
+  gap: var(--spacing-3);
+  align-items: flex-end;
+}
+
+.pm-row .pm-field-group {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Fila de fecha */
+.pm-date-row {
+  display: flex;
+  gap: var(--spacing-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pm-between-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  min-width: 134px;
+  flex-shrink: 0;
+  padding-left: var(--spacing-2);
+}
+
+/* Radio buttons */
+.pm-radio-group {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pm-radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+/* ── Sección cónyuge ─────────────────────────────────────────────────────── */
+
+.pm-section-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: var(--spacing-1) 0;
+}
+
+.pm-section-title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pm-spouse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.pm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-3) var(--spacing-5);
+  border-top: 1px solid var(--color-border-light);
+  flex-shrink: 0;
+  gap: var(--spacing-3);
+}
+
+.pm-footer-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.pm-footer-actions {
+  display: flex;
+  gap: var(--spacing-2);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pm-edit-more-link {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: var(--font-body);
+  text-decoration: none;
+  transition: text-decoration var(--transition-fast);
+  white-space: nowrap;
+}
+
+.pm-edit-more-link:hover {
+  text-decoration: underline;
+}

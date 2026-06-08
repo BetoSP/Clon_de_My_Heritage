@@ -1,0 +1,658 @@
+/* ── ProfileDrawer — Sidebar de persona ──────────────────────────────────── */
+
+/* Backdrop semitransparente — solo cosmético, no bloquea eventos */
+.profile-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #00000018;
+  z-index: 99;
+  pointer-events: none;
+}
+
+/* Panel principal */
+.profile-drawer {
+  position: fixed;
+  top: var(--layout-nav-height, 0px);
+  left: 0;
+  width: 420px;
+  height: calc(100vh - var(--layout-nav-height, 0px) - var(--layout-footer-height, 0px));
+  z-index: 100;
+  background: var(--color-card-bg);
+  box-shadow: 4px 0 24px #00000022;
+  overflow-y: auto;
+  transition: transform 0.3s ease-in-out;
+  transform: translateX(-100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-drawer--open {
+  transform: translateX(0);
+}
+
+/* Botón de cierre — flecha flotante en el borde derecho del drawer */
+.profile-drawer__close-btn {
+  position: fixed;
+  top: calc(var(--layout-nav-height, 0px) + (100vh - var(--layout-nav-height, 0px) - var(--layout-footer-height, 0px)) / 2);
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  z-index: 101;
+  line-height: 1;
+  transition: left 0.3s ease-in-out, background var(--transition-fast);
+}
+
+.profile-drawer__close-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.profile-header {
+  padding: var(--spacing-5) var(--spacing-5) var(--spacing-4);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.profile-header__row {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: flex-start;
+}
+
+.profile-avatar {
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-header__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-header__name {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-1);
+}
+
+.profile-header__subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-2);
+}
+
+.profile-header__vitals {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-2);
+}
+
+.profile-header__vitals .vital-symbol {
+  color: var(--color-text-muted);
+}
+
+.profile-header__link {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+}
+
+.profile-header__link:hover {
+  text-decoration: underline;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────────── */
+
+.profile-actions {
+  display: flex;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-4);
+}
+
+.profile-action-btn {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-1);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  transition: background var(--transition-fast);
+}
+
+.profile-action-btn:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-medium);
+}
+
+/* Tooltip CSS puro */
+.profile-action-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-chrome-bg);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  padding: 4px var(--spacing-2);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  z-index: 200;
+}
+
+.profile-action-btn:hover::after {
+  opacity: 1;
+}
+
+/* ── Menú "Más" ─────────────────────────────────────────────────────────── */
+
+.profile-more-menu-wrap {
+  position: relative;
+  flex: 1;
+  overflow: visible;
+}
+
+.profile-more-menu {
+  position: absolute;
+  top: calc(100% + var(--spacing-1));
+  right: 0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-modal);
+  min-width: 230px;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.profile-more-menu__item {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-4);
+  text-align: left;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.profile-more-menu__item:hover {
+  background: var(--color-bg-subtle);
+}
+
+.profile-more-menu__item--danger {
+  color: var(--color-danger);
+}
+
+.profile-more-menu__separator {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: var(--spacing-1) 0;
+}
+
+/* ── Confirmación de eliminación ────────────────────────────────────────── */
+
+.profile-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-5);
+  background: var(--color-danger-light);
+  border-bottom: 1px solid var(--color-danger-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-danger-dark);
+}
+
+.profile-delete-confirm span {
+  flex: 1;
+}
+
+.btn-confirm-yes {
+  padding: var(--spacing-1) var(--spacing-3);
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.btn-confirm-yes:hover {
+  background: var(--color-danger-hover);
+}
+
+.btn-confirm-no {
+  padding: var(--spacing-1) var(--spacing-3);
+  background: var(--color-card-bg);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.btn-confirm-no:hover {
+  background: var(--color-bg-subtle);
+}
+
+/* ── Secciones (acordeón) ───────────────────────────────────────────────── */
+
+.profile-section {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.profile-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-3) var(--spacing-5);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--transition-fast);
+}
+
+.profile-section__header:hover {
+  background: var(--color-bg-subtle);
+}
+
+.profile-section__title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profile-section__header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.profile-section__add-btn {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  padding: 0 var(--spacing-1);
+}
+
+.profile-section__add-btn:hover {
+  text-decoration: underline;
+}
+
+.profile-section__chevron {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  transition: transform var(--transition-fast);
+  display: inline-block;
+}
+
+.profile-section__chevron--open {
+  transform: rotate(180deg);
+}
+
+.profile-section__body {
+  padding: 0 var(--spacing-5) var(--spacing-4);
+}
+
+/* ── Placeholder genérico ───────────────────────────────────────────────── */
+
+.profile-placeholder {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-5);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.profile-placeholder__icon {
+  font-size: var(--font-size-xl);
+  opacity: 0.45;
+}
+
+/* ── Biografía — campos inline ──────────────────────────────────────────── */
+
+.profile-bio-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) 0;
+  border-bottom: 1px solid var(--color-border-row);
+}
+
+.profile-bio-field:last-child {
+  border-bottom: none;
+}
+
+.profile-bio-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.profile-inline-value {
+  font-size: var(--font-size-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 2px var(--spacing-1);
+  transition: background var(--transition-fast);
+  display: inline-block;
+}
+
+.profile-inline-value:hover {
+  background: var(--color-primary-light);
+}
+
+.profile-inline-empty {
+  color: var(--color-text-placeholder);
+}
+
+.profile-inline-input {
+  font-size: var(--font-size-md);
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--spacing-2);
+  outline: none;
+  width: 100%;
+}
+
+.profile-inline-input--sm {
+  width: 54px;
+}
+
+.profile-inline-input--md {
+  width: 70px;
+}
+
+.profile-inline-date {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+}
+
+.profile-inline-save,
+.profile-inline-cancel {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-md);
+  padding: 0 var(--spacing-1);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+}
+
+.profile-inline-save {
+  color: var(--color-accent-green);
+}
+
+.profile-inline-cancel {
+  color: var(--color-danger);
+}
+
+.profile-inline-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  margin-top: var(--spacing-1);
+}
+
+/* ── Familia Inmediata ──────────────────────────────────────────────────── */
+
+.profile-family-group {
+  margin-bottom: var(--spacing-3);
+}
+
+.profile-family-group__label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--spacing-2);
+  padding-top: var(--spacing-2);
+}
+
+.profile-family-member {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.profile-family-member:hover {
+  background: var(--color-bg-subtle);
+}
+
+.profile-family-member__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-family-member__name {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-family-member__rel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.profile-family-member__years {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Botón y formulario de disolución */
+
+.profile-dissolve-trigger {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: none;
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--spacing-2);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  flex-shrink: 0;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.profile-dissolve-trigger:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.profile-dissolve-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  margin-top: var(--spacing-1);
+  padding-left: calc(36px + var(--spacing-3) + var(--spacing-2));
+  padding-bottom: var(--spacing-2);
+}
+
+.profile-dissolve-input {
+  width: 70px;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--spacing-2);
+  outline: none;
+}
+
+.profile-dissolve-input:focus {
+  border-color: var(--color-primary);
+}
+
+/* ── Eventos ────────────────────────────────────────────────────────────── */
+
+.profile-event {
+  display: flex;
+  gap: var(--spacing-4);
+  padding: var(--spacing-2) 0;
+  border-bottom: 1px solid var(--color-border-row);
+}
+
+.profile-event:last-child {
+  border-bottom: none;
+}
+
+.profile-event__year {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  min-width: 44px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.profile-event__body {
+  flex: 1;
+}
+
+.profile-event__type {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.profile-event__detail {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.profile-event__place {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.profile-event__person-ref {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-1);
+  cursor: pointer;
+}
+
+.profile-event__person-ref:hover .profile-event__person-name {
+  text-decoration: underline;
+  color: var(--color-primary);
+}
+
+.profile-event__person-name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Botón y confirmación de eliminación de relación */
+
+.profile-delete-rel-trigger {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  background: none;
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--spacing-2);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  flex-shrink: 0;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.profile-delete-rel-trigger:hover {
+  background: var(--color-danger-light);
+}
+
+.profile-delete-rel-confirm {
+  margin-top: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+  padding: var(--spacing-3);
+  background: var(--color-danger-light);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-md);
+  margin-left: calc(36px + var(--spacing-3) + var(--spacing-2));
+}
+
+.profile-delete-rel-warning {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger-dark);
+  line-height: var(--line-height-base);
+  margin-bottom: var(--spacing-3);
+}
+
+.profile-delete-rel-actions {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+/* ── Estado vacío genérico ──────────────────────────────────────────────── */
+
+.profile-empty-msg {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  padding: var(--spacing-2) 0;
+  text-align: center;
+}

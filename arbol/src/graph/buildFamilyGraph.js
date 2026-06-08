@@ -68,6 +68,8 @@ export function buildFamilyGraph(people, relationships) {
         dateDisplay,
         gender: person.gender,
         adopted: person.adopted ?? false,
+        is_alive: person.is_alive ?? true,
+        migration_condition: person.migration_condition ?? null,
         hasHiddenParents: hiddenParentIds.has(person.id),
       },
     });

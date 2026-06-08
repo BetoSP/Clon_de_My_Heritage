@@ -108,9 +108,23 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, onSe
   const isMale = node.data.gender === "male";
   const isFemale = node.data.gender === "female";
 
-  const accentColor = isFocus ? "var(--node-focus-accent)" : isMale ? "var(--node-male-accent)" : "var(--node-female-accent)";
-  const bgColor = isGhostActive ? "var(--node-active-bg)" : isFocus ? "var(--node-focus-bg)" : isMale ? "var(--node-male-bg)" : "var(--node-female-bg)";
-  const borderColor = isGhostActive ? (isMale ? "var(--node-active-border-male)" : "var(--node-active-border-female)") : isFocus ? "var(--node-focus-border)" : isMale ? "var(--node-male-border)" : "var(--node-female-border)";
+  const MIGRATION_BG = {
+    galicia_born:      "var(--node-migration-galicia-born)",
+    galicia_emigrated: "var(--node-migration-galicia-emigrated)",
+    diaspora_born:     "var(--node-migration-diaspora-born)",
+    returned:          "var(--node-migration-returned)",
+    no_galician_roots: "var(--node-migration-no-galician)",
+  };
+  const migrationCondition = node.data.migration_condition ?? null;
+  const accentColor = isMale ? "var(--node-male-accent)" : "var(--node-female-accent)";
+  const bgColor = isGhostActive
+    ? "var(--node-active-bg)"
+    : migrationCondition
+    ? (MIGRATION_BG[migrationCondition] ?? "#ffffff")
+    : "#ffffff";
+  const borderColor = isGhostActive
+    ? (isMale ? "var(--node-active-border-male)" : "var(--node-active-border-female)")
+    : "var(--node-default-border)";
   const genderBarColor = isMale ? "var(--node-gender-bar-male)" : isFemale ? "var(--node-gender-bar-female)" : "var(--node-gender-bar-unknown)";
 
   const name = node.data.displayName ?? (node.data.name ?? "—");
@@ -125,12 +139,32 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, onSe
   const editCY = y + NODE_ICON_EDIT_CY;
 
   return (
-    <g style={{ cursor: "pointer" }} onClick={() => onSelect(node.id)}>
-      {isSelected && !isGhostActive && (
-        <rect x={x - NODE_SELECTION_PAD} y={y - NODE_SELECTION_PAD} width={PERSON_W + NODE_SELECTION_PAD * 2} height={PERSON_H + NODE_SELECTION_PAD * 2} rx={NODE_SELECTION_RADIUS} fill="var(--node-selection-bg)" stroke="var(--node-selection-border)" strokeWidth={NODE_STROKE_THIN} strokeDasharray="var(--node-selection-dash)" />
-      )}
+    <g
+      style={{
+        cursor: "pointer",
+        filter: isFocus ? "var(--node-focus-glow)" : undefined,
+      }}
+      onClick={() => onSelect(node.id)}
+    >
       <rect x={x + NODE_SHADOW_DX} y={y + NODE_SHADOW_DY} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill="var(--node-shadow-color)" />
-      <rect x={x} y={y} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill={bgColor} stroke={borderColor} style={{ strokeWidth: (isGhostActive || isFocus) ? "var(--node-active-stroke-w)" : NODE_STROKE_NORMAL }} />
+      <rect x={x} y={y} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} fill={bgColor} stroke={borderColor} style={{ strokeWidth: isGhostActive ? "var(--node-active-stroke-w)" : NODE_STROKE_NORMAL }} />
+      {node.data.is_alive === false && (
+        <clipPath id={`clip-death-${node.id}`}>
+          <rect x={x} y={y} width={PERSON_W} height={PERSON_H} rx={NODE_RADIUS} />
+        </clipPath>
+      )}
+      {node.data.is_alive === false && (
+        <line
+          x1={x}
+          y1={y + 18}
+          x2={x + 18}
+          y2={y}
+          stroke="var(--node-death-band-color)"
+          strokeWidth="var(--node-death-band-width)"
+          clipPath={`url(#clip-death-${node.id})`}
+          strokeLinecap="butt"
+        />
+      )}
       <line x1={x + NODE_GENDER_BAR_W / 2} y1={y + NODE_RADIUS} x2={x + NODE_GENDER_BAR_W / 2} y2={y + PERSON_H - NODE_RADIUS} stroke={genderBarColor} strokeWidth={NODE_GENDER_BAR_W} strokeLinecap="butt" />
       <PersonAvatar cx={x + AVATAR_CX} cy={y + AVATAR_CY} r={AVATAR_R} />
       <text x={x + TEXT_X} y={y + 20} fontSize="var(--node-font-name)" fontWeight="700" fill="var(--node-text-name)" style={{ fontFamily: "var(--font-family-node)" }}>{name}</text>
@@ -166,24 +200,6 @@ function PersonNode({ node, isSelected, isFocus, isGhostActive, unionCount, onSe
   );
 }
 
-function DissolveCell({ edge, dissolvingRelId, dissolveYear, setDissolvingRelId, setDissolveYear, onDissolveSpouse, spouseRelId }) {
-  const relId = spouseRelId(edge.id);
-  const isDissolving = dissolvingRelId === relId;
-
-  if (isDissolving) {
-    return (
-      <span className="dissolve-wrap">
-        <input type="number" value={dissolveYear} onChange={(e) => setDissolveYear(e.target.value)} placeholder="Año" className="dissolve-year-input" />
-        <button onClick={() => { if (!dissolveYear) return; onDissolveSpouse?.(relId, Number(dissolveYear)); setDissolvingRelId(null); setDissolveYear(""); }} className="btn-dissolve-confirm">✓</button>
-        <button onClick={() => { setDissolvingRelId(null); setDissolveYear(""); }} className="btn-dissolve-cancel">✕</button>
-      </span>
-    );
-  }
-
-  return (
-    <button onClick={() => setDissolvingRelId(relId)} className="btn-dissolve-trigger">activo · disolver</button>
-  );
-}
 
 export default function GraphView({
   graph,
@@ -195,13 +211,12 @@ export default function GraphView({
   onEditPerson = null,
   onDeletePerson = null,
   onFocusPerson = null,
+  onOpenDrawer = null,
   searchQuery = "",
 }) {
   const layout = useMemo(() => layoutFamilyGraph(graph), [graph]);
   const nodeMap = useMemo(() => new Map(layout.nodes.map((n) => [n.id, n])), [layout.nodes]);
 
-  const [dissolvingRelId, setDissolvingRelId] = useState(null);
-  const [dissolveYear, setDissolveYear] = useState("");
   const [activeGhostNodeId, setActiveGhostNodeId] = useState(null);
 
   const [zoom, setZoom] = useState(1);
@@ -289,10 +304,6 @@ export default function GraphView({
     return () => wrapper.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
-  function spouseRelId(edgeId) {
-    return parseInt(edgeId.split("-")[1], 10);
-  }
-
   function nodeOpacity(node) {
     if (activeGhostNodeId) return node.id === activeGhostNodeId ? 1 : NODE_OPACITY_UNFOCUSED;
     if (!searchQuery) return 1;
@@ -334,6 +345,8 @@ export default function GraphView({
       setPan({ x: wrapper.clientWidth / 2 - nodeCX * zoom, y: wrapper.clientHeight / 2 - nodeCY * zoom });
     }
     onSelectNode?.(nodeId);
+    onOpenDrawer?.(nodeId);
+    onFocusPerson?.(nodeId);
   }
 
   const activeNode = activeGhostNodeId ? nodeMap.get(activeGhostNodeId) : null;

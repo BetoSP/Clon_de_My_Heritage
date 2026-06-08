@@ -8,6 +8,7 @@ import TreeControlPanel from "./components/TreeControlPanel";
 import PersonModal from "./components/PersonModal";
 import RelationshipModal from "./components/RelationshipModal";
 import AddRelativeModal from "./components/AddRelativeModal";
+import ProfileDrawer from "./components/ProfileDrawer";
 import { fetchPeople, fetchPeopleByIds, addPerson, updatePerson, deletePerson } from "./services/peopleService";
 import { fetchRelationships, fetchRelationshipsByPersonIds, dissolveRelationship, addRelationship, updateRelationship, deleteRelationship } from "./services/relationshipService";
 import { buildFamilyGraph } from "./graph/buildFamilyGraph.js";
@@ -28,11 +29,14 @@ export default function App() {
   const [modalPersona, setModalPersona] = useState(null);
   const [modalRelacion, setModalRelacion] = useState(null);
   const [modalAddRelative, setModalAddRelative] = useState(null);
+  const [drawerPersonId, setDrawerPersonId] = useState(null);
   const [activeSection, setActiveSection] = useState("tree");
   const [activeTree, setActiveTree] = useState({ name: "Mi árbol familiar", ownerName: "Alberto Sanchez Peña" });
 
   const focusInitialized = useRef(false);
   const focusWasCleared = useRef(false);
+  const navBarRef = useRef(null);
+  const footerRef = useRef(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -72,6 +76,20 @@ export default function App() {
   }, [focusPersonId, generationsCount]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  useEffect(() => {
+    function updateLayoutVars() {
+      const navH = navBarRef.current?.getBoundingClientRect().height ?? 0;
+      const footerH = footerRef.current?.getBoundingClientRect().height ?? 0;
+      document.documentElement.style.setProperty('--layout-nav-height', `${navH}px`);
+      document.documentElement.style.setProperty('--layout-footer-height', `${footerH}px`);
+    }
+    const observer = new ResizeObserver(updateLayoutVars);
+    if (navBarRef.current) observer.observe(navBarRef.current);
+    if (footerRef.current) observer.observe(footerRef.current);
+    updateLayoutVars();
+    return () => observer.disconnect();
+  }, []);
 
   const graph = useMemo(
     () => buildFamilyGraph(people, relationships),
@@ -327,6 +345,14 @@ export default function App() {
     }
   }
 
+  function handleOpenDrawer(nodeId) {
+    setDrawerPersonId(String(nodeId));
+  }
+
+  function handleCloseDrawer() {
+    setDrawerPersonId(null);
+  }
+
   function handleSelectNode(nodeId) {
     setSelectedNodeId((prev) => prev === nodeId ? null : nodeId);
   }
@@ -343,6 +369,10 @@ export default function App() {
   function handleFocusPerson(nodeId) {
     setFocusPersonId(String(nodeId));
     setSelectedNodeId(null);
+  }
+
+  function handleNavigateToFullProfile(personId) {
+    setActiveSection("profile-" + personId);
   }
 
   function handleClearFocus() {
@@ -413,6 +443,7 @@ export default function App() {
     <div className="app-shell">
 
       <ModuleNavBar
+        ref={navBarRef}
         user={{ name: "Alberto Sanchez Peña" }}
         trees={[activeTree]}
         activeTree={activeTree}
@@ -457,6 +488,7 @@ export default function App() {
               onEditPerson={handleEditPerson}
               onDeletePerson={handleDeletePersona}
               onFocusPerson={handleFocusPerson}
+              onOpenDrawer={handleOpenDrawer}
               searchQuery={searchQuery}
             />
           </main>
@@ -475,7 +507,7 @@ export default function App() {
         </div>
       )}
 
-      <FooterBar />
+      <FooterBar ref={footerRef} />
 
       {modalPersona !== null && (
         <PersonModal
@@ -486,6 +518,7 @@ export default function App() {
           onDelete={handleDeletePersona}
           onAddRelationship={handleAddRelationshipFromModal}
           onClose={() => setModalPersona(null)}
+          onNavigateToFullProfile={handleNavigateToFullProfile}
         />
       )}
 
@@ -511,6 +544,22 @@ export default function App() {
           suggestedSurname2={addRelativeSuggested.surname2}
           onSave={handleSaveAddRelative}
           onClose={() => setModalAddRelative(null)}
+        />
+      )}
+
+      {drawerPersonId !== null && (
+        <ProfileDrawer
+          personId={drawerPersonId}
+          people={people}
+          relationships={relationships}
+          onClose={handleCloseDrawer}
+          onFocusPerson={handleFocusPerson}
+          onEditPerson={handleEditPerson}
+          onNavigateToPerson={handleOpenDrawer}
+          onDissolveSpouse={handleDissolveSpouse}
+          onDeletePerson={handleDeletePersona}
+          onDeleteRelationship={handleDeleteRelacion}
+          loadData={loadData}
         />
       )}
 

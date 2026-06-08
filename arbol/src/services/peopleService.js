@@ -27,6 +27,7 @@ export async function addPerson({
   gender, adopted,
   is_alive,
   death_day, death_month, death_year, death_place, death_cause, burial_place,
+  migration_condition,
 }) {
   const { data, error } = await supabase
     .from("people")
@@ -36,6 +37,7 @@ export async function addPerson({
       gender, adopted,
       is_alive,
       death_day, death_month, death_year, death_place, death_cause, burial_place,
+      migration_condition,
     }])
     .select()
     .single();
@@ -51,6 +53,7 @@ export async function updatePerson({
   gender, adopted,
   is_alive,
   death_day, death_month, death_year, death_place, death_cause, burial_place,
+  migration_condition,
 }) {
   const { error } = await supabase
     .from("people")
@@ -60,6 +63,7 @@ export async function updatePerson({
       gender, adopted,
       is_alive,
       death_day, death_month, death_year, death_place, death_cause, burial_place,
+      migration_condition,
     })
     .eq("id", id);
 
@@ -73,4 +77,13 @@ export async function deletePerson(id) {
     .eq("id", id);
 
   if (error) throw error;
+}
+
+export async function fetchDistinctPlaces(field) {
+  const { data, error } = await supabase
+    .from("people")
+    .select(field)
+    .not(field, "is", null);
+  if (error) throw error;
+  return [...new Set(data.map(r => r[field]).filter(Boolean))].sort();
 }

@@ -398,6 +398,162 @@ Módulo Genealógico
 
 ---
 
+## [042] ProfileDrawer como punto central de acceso a datos de persona
+
+**Decisión:** el sidebar de persona (ProfileDrawer) es el componente principal
+de acceso rápido a los datos de una persona. Se abre con click en zona neutra
+del nodo. Reemplaza a DissolveCell (eliminado de GraphView.jsx).
+
+**Arquitectura:**
+- Posición: margen izquierdo, `position: fixed`, `left: 0`
+- Dimensiones: 420px de ancho, altura dinámica calculada con ResizeObserver
+- Animación: `transform: translateX(-100%)` → `translateX(0)` en 0.3s
+- Backdrop: overlay semitransparente con `pointer-events: none` — no bloquea el árbol
+- Botón de cierre: `›` en borde derecho del drawer, animado junto con el panel
+
+**Contenido:** encabezado, descubrimientos (placeholder), fotos (placeholder),
+biografía con edición inline, familia inmediata navegable, eventos cronológicos,
+fuentes (placeholder).
+
+**Edición inline:** campos biográficos editables con click → input → blur/Enter → PATCH.
+No reemplaza al PersonModal — este sigue siendo el lugar para editar nombre/apellidos/género.
+
+---
+
+## [043] Disolución vs eliminación de relación de pareja
+
+**Decisión:** dos acciones distintas para gestionar relaciones de pareja:
+- **Disolver:** la relación existió pero terminó. Guarda `until_year` en DB. Disponible para relaciones activas (`until_year === null`).
+- **Eliminar relación:** solo para errores de carga. Borra el registro completamente. Requiere confirmación con advertencia fuerte.
+
+**Razón:** MyHeritage hace muy difícil corregir una relación cargada por error. GM mejora esto con la opción de eliminar, pero con fricción intencional para evitar el uso indebido.
+
+**Pendiente (post-auth):** pedir contraseña + guardar en tabla de auditoría.
+
+---
+
+## [044] Posicionamiento dinámico del ProfileDrawer con ResizeObserver
+
+**Decisión:** el ProfileDrawer mide la altura real de ModuleNavBar y FooterBar
+usando ResizeObserver en App.jsx y expone los valores como variables CSS globales:
+- `--layout-nav-height`
+- `--layout-footer-height`
+
+**Razón:** evitar hardcodear alturas que quedarían desacopladas de los componentes reales. Si NavBar o Footer cambian de tamaño, el drawer se ajusta automáticamente.
+
+**Implementación:** `navBarRef` y `footerRef` en App.jsx via `forwardRef` en ModuleNavBar y FooterBar. ResizeObserver actualiza las variables en `:root`.
+
+**Beneficio adicional:** las variables quedan disponibles para cualquier otro componente futuro que necesite conocer la altura de la barra o el footer.
+
+---
+
+## [042] ProfileDrawer como punto central de acceso a datos de persona
+
+**Decisión:** el sidebar de persona (ProfileDrawer) es el componente principal de acceso rápido a los datos de una persona. Se abre con click en zona neutra del nodo. Reemplaza a DissolveCell (eliminado de GraphView.jsx).
+
+**Arquitectura:**
+- Posición: margen izquierdo, `position: fixed`, `left: 0`
+- Dimensiones: 420px de ancho, altura dinámica calculada con ResizeObserver
+- Animación: `transform: translateX(-100%)` → `translateX(0)` en 0.3s
+- Backdrop: overlay semitransparente con `pointer-events: none` — no bloquea el árbol
+- Botón de cierre: `›` en borde derecho del drawer, animado junto con el panel
+
+**Contenido:** encabezado, descubrimientos (placeholder), fotos (placeholder), biografía con edición inline, familia inmediata navegable, eventos cronológicos, fuentes (placeholder).
+
+**Edición inline:** campos biográficos editables con click → input → blur/Enter → PATCH. No reemplaza al PersonModal — este sigue siendo el lugar para editar nombre/apellidos/género.
+
+---
+
+## [043] Disolución vs eliminación de relación de pareja
+
+**Decisión:** dos acciones distintas para gestionar relaciones de pareja:
+- **Disolver:** la relación existió pero terminó. Guarda `until_year` en DB. Disponible para relaciones activas (`until_year === null`).
+- **Eliminar relación:** solo para errores de carga. Borra el registro completamente. Requiere confirmación con advertencia fuerte.
+
+**Razón:** MyHeritage hace muy difícil corregir una relación cargada por error. GM mejora esto con la opción de eliminar, pero con fricción intencional para evitar el uso indebido.
+
+**Pendiente (post-auth):** pedir contraseña + guardar en tabla de auditoría.
+
+---
+
+## [044] Posicionamiento dinámico del ProfileDrawer con ResizeObserver
+
+**Decisión:** el ProfileDrawer mide la altura real de ModuleNavBar y FooterBar usando ResizeObserver en App.jsx y expone los valores como variables CSS globales: `--layout-nav-height` y `--layout-footer-height`.
+
+**Razón:** evitar hardcodear alturas que quedarían desacopladas de los componentes reales.
+
+**Implementación:** `navBarRef` y `footerRef` en App.jsx via `forwardRef` en ModuleNavBar y FooterBar. ResizeObserver actualiza las variables en `:root`.
+
+**Beneficio adicional:** las variables quedan disponibles para cualquier otro componente futuro que necesite conocer la altura de la barra o el footer.
+
+---
+
+## [045] Campo migration_condition en tabla people
+
+**Decisión:** nueva columna `migration_condition TEXT CHECK (migration_condition IN ('galicia_born', 'galicia_emigrated', 'diaspora_born', 'returned', 'no_galician_roots'))` en la tabla `people`.
+
+**Valores:**
+- `galicia_born` — Nacido/a en Galicia, nunca emigró
+- `galicia_emigrated` — Nacido/a en Galicia, emigrado/a
+- `diaspora_born` — Nacido/a en la diáspora (hijo/nieto de gallegos)
+- `returned` — Retornado/a a Galicia
+- `no_galician_roots` — Sin raíces gallegas (generalmente cónyuge no gallego)
+- `null` — Sin definir
+
+**UI:** dropdown en PersonModal simplificado. Se amplía en edición ampliada (PROMPT_016).
+
+**Visualización en nodo:** cambia el fondo del nodo completo con colores suaves definidos como variables CSS. Sin condición definida (null) → fondo blanco.
+
+**SQL ejecutado:**
+```sql
+ALTER TABLE people ADD COLUMN IF NOT EXISTS migration_condition text
+CHECK (migration_condition IN ('galicia_born','galicia_emigrated','diaspora_born','returned','no_galician_roots'));
+```
+
+---
+
+## [046] Fondo del nodo — blanco por defecto, condición migratoria como único modificador
+
+**Decisión:** el fondo de todos los nodos es blanco (`#ffffff`) independientemente del género. El género se indica únicamente por la barra vertical izquierda. La condición migratoria es el único factor que cambia el fondo del nodo.
+
+**Variables CSS:**
+```css
+--node-male-bg: #ffffff;
+--node-female-bg: #ffffff;
+--node-unknown-bg: #ffffff;
+--node-migration-galicia-born:      #e8f5e9;
+--node-migration-galicia-emigrated: #e3f2fd;
+--node-migration-diaspora-born:     #fffde7;
+--node-migration-returned:          #fff3e0;
+--node-migration-no-galician:       #f5f5f5;
+```
+
+**Indicador de foco:** `filter: drop-shadow(0 0 3px var(--color-primary-dark))` via variable `--node-focus-glow`. No pisa el color de condición migratoria.
+
+**Indicador de fallecido:** banda diagonal en esquina superior izquierda del nodo via `<line>` con `<clipPath>`. Variables: `--node-death-band-color: #2d3748`, `--node-death-band-width: 8`.
+
+---
+
+## [047] PersonModal rediseñado — solo datos propios de la persona
+
+**Decisión:** el PersonModal muestra y edita únicamente datos propios de la persona (nombre, género, prefijo/sufijo, fechas, lugares, condición migratoria). Las relaciones familiares (cónyuge, padres, hijos) se gestionan desde AddRelativeModal y la edición ampliada.
+
+**Layout:** dos columnas — foto + nombre + año a la izquierda (110px fijo), formulario a la derecha con scroll.
+
+**Nuevos campos:**
+- Nombre: un campo combinado "Primer (y segundo) nombre" + "Apellido"
+- Prefijo: dropdown con opciones por género (Sr./Don/Dr. para hombre, Sra./Doña/Dra. para mujer)
+- Sufijo: dropdown (I, II, III, Junior, Senior)
+- Precisión de fecha: 6 opciones (Exactamente, Antes del, Después de, Alrededor de, Fecha no segura, Entre...y...)
+- Lugares con autocompletado desde DB (fetchDistinctPlaces)
+- migration_condition: dropdown con 5 opciones + null
+
+**Link "Edite más campos":** navega a la edición ampliada (PROMPT_016). Solo visible en modo edición.
+
+**Campo `adopted`:** eliminado definitivamente de la UI (obsoleto según DECISIONS [027]).
+
+---
+
 ## 📌 Regla general del archivo
 
 Este archivo contiene únicamente decisiones técnicas ya tomadas o en proceso de implementación.

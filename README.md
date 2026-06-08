@@ -134,6 +134,19 @@ brother, sister
 ✔ Controles reorganizados: generaciones | buscar | ⚙ ❓
 ✔ Design system — todo en variables CSS hexadecimales
 ✔ Footer minimalista
+✔ ProfileDrawer implementado (sidebar de persona, margen izquierdo, 420px)
+✔ Edición inline de campos biográficos
+✔ Familia inmediata navegable en el drawer (padres, hijos, cónyuge, hermanos)
+✔ Disolución y eliminación de pareja desde el drawer
+✔ ResizeObserver — variables CSS dinámicas --layout-nav-height y --layout-footer-height
+✔ ModuleNavBar y FooterBar con forwardRef
+✔ DissolveCell eliminado de GraphView.jsx
+✔ PersonModal rediseñado — layout dos columnas, prefijo/sufijo, precisión de fechas, autocompletado de lugares
+✔ Campo migration_condition en tabla people y en PersonModal
+✔ Fondo del nodo blanco — condición migratoria cambia el fondo con colores suaves
+✔ Banda diagonal para personas fallecidas (esquina superior izquierda)
+✔ Glow de foco suave via drop-shadow
+✔ Click en nodo → centra vista + abre drawer + cambia foco
 
 ---
 
@@ -142,6 +155,8 @@ brother, sister
 ```
 src/
 ├── components/
+│   ├── ProfileDrawer.jsx         — sidebar de persona (420px, margen izquierdo)
+│   ├── ProfileDrawer.css         — estilos del sidebar
 │   ├── GraphView.jsx
 │   ├── PersonModal.jsx
 │   ├── AddRelativeModal.jsx

@@ -93,25 +93,43 @@
   /* patrón dash para relaciones disueltas */
 
   /* ── Nodo persona — masculino ────────────────────────────────────────── */
-  --node-male-bg: #f0fdff;
+  --node-male-bg: #ffffff;
   --node-male-border: #b2ebf2;
   --node-male-accent: #00bcd4;
   /* barra lateral izquierda */
 
   /* ── Nodo persona — femenino ─────────────────────────────────────────── */
-  --node-female-bg: #fff0f6;
+  --node-female-bg: #ffffff;
   --node-female-border: #fce4ec;
   --node-female-accent: #e91e63;
+
+  /* ── Nodo persona — género desconocido ───────────────────────────────── */
+  --node-unknown-bg: #ffffff;
+
+  /* ── Nodo persona — borde por defecto ────────────────────────────────── */
+  --node-default-border: #e2e8f0;
+
+  /* ── Nodo persona — condición migratoria ─────────────────────────────── */
+  --node-migration-galicia-born:      #e8f5e9;
+  --node-migration-galicia-emigrated: #e3f2fd;
+  --node-migration-diaspora-born:     #fff8e1;
+  --node-migration-returned:          #f3e5f5;
+  --node-migration-no-galician:       #fafafa;
 
   /* ── Nodo persona — barra de género ─────────────────────────────────── */
   --node-gender-bar-male: #2b6cb0;
   --node-gender-bar-female: #b83280;
   --node-gender-bar-unknown: #4a5568;
 
-  /* ── Nodo persona — foco ─────────────────────────────────────────────── */
+  /* ── Nodo persona — foco (glow — variables de color legacy retenidas) ── */
   --node-focus-bg: #f5f3ff;
   --node-focus-border: #6d28d9;
   --node-focus-accent: #6d28d9;
+  --node-focus-glow: drop-shadow(0 0 3px var(--color-primary-dark));
+
+  /* ── Nodo persona — fallecido ────────────────────────────────────────── */
+  --node-death-band-color: #2d3748;
+  --node-death-band-width: 8;
 
   /* ── Nodo persona — activo (modo fantasma) ───────────────────────────── */
   --node-active-bg: #ffffff;

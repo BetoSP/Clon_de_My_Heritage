@@ -53,6 +53,20 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 ✔ Panel de accesibilidad ♿ funcional
 ✔ Página de inicio del módulo (ModuleHomePage — dashboard)
 ✔ Tabla `trees` en Supabase con RLS
+✔ ProfileDrawer implementado (sidebar de persona, margen izquierdo, 420px)
+✔ Edición inline de campos biográficos (birth/death place, fechas)
+✔ Familia inmediata navegable en el drawer (padres, hijos, cónyuge, hermanos)
+✔ Disolución y eliminación de pareja desde el drawer
+✔ ResizeObserver en App.jsx — variables CSS dinámicas --layout-nav-height y --layout-footer-height
+✔ ModuleNavBar y FooterBar con forwardRef
+✔ DissolveCell eliminado de GraphView.jsx
+✔ PersonModal rediseñado — layout dos columnas, prefijo/sufijo, precisión de fechas, autocompletado de lugares
+✔ Campo migration_condition en tabla people (SQL ejecutado) y en PersonModal
+✔ Fondo del nodo blanco por defecto — condición migratoria cambia el fondo con colores suaves
+✔ Banda diagonal en esquina superior izquierda para personas fallecidas
+✔ Glow de foco (drop-shadow suave) — no pisa color de condición migratoria
+✔ Click en nodo → centra vista + abre drawer + cambia foco
+✔ fetchDistinctPlaces en peopleService — autocompletado de lugares desde DB
 
 ---
 
@@ -128,6 +142,7 @@ El árbol genealógico es el **módulo estrella** del ecosistema Galicia Migrant
 | death_place      | text        | opcional                          |
 | death_cause      | text        | opcional                          |
 | burial_place     | text        | opcional                          |
+| migration_condition | text     | CHECK ('galicia_born','galicia_emigrated','diaspora_born','returned','no_galician_roots') |
 | created_at       | timestamptz |                                   |
 
 ---
@@ -189,6 +204,8 @@ Devuelve: ancestros, descendientes, hermanos y cónyuges del foco. **No incluye 
 ```
 src/
 ├── components/
+│   ├── ProfileDrawer.jsx         — sidebar de persona (420px, margen izquierdo)
+│   ├── ProfileDrawer.css         — estilos del sidebar
 │   ├── GraphView.jsx
 │   ├── PersonModal.jsx
 │   ├── AddRelativeModal.jsx
@@ -247,11 +264,16 @@ src/
 - Búsqueda avanzada multi-campo
 
 ### Bugs pendientes
-- BUG-01: CRUD de relaciones (diferido al sidebar)
-- BUG-02: DissolveCell sin UI (diferido al sidebar)
+- BUG-01: ✅ Resuelto — CRUD de relaciones (ProfileDrawer)
+- BUG-02: ✅ Resuelto — DissolveCell (ProfileDrawer)
 - BUG-03: Líneas diagonales en hijos casados
 - BUG-04: Nodos fantasma con coordenadas negativas
 - BUG-05: Slider de generaciones sin foco
+- BUG-06: Botón de cierre del ghost mode no visible
+- BUG-07: Nodos fantasma aparecen lejos del nodo activo
+- BUG-08: Doble estado visual violeta inconsistente
+- BUG-09: Indicador visual de foco — solución definitiva pendiente
+- BUG-10: Línea punteada de selección eliminada temporalmente
 
 ### Bases compartidas a crear en portal/
 - `portal/auth/`

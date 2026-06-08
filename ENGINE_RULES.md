@@ -116,7 +116,26 @@ const hasFather = edges.some((e) => e.target === nodeId && e.type === "father");
 
 ---
 
-## Prohibiciones
+## Campos propagados a node.data
+
+Cada PersonNode en el grafo lleva en `node.data` los siguientes campos del registro `people`:
+
+| Campo | Descripción |
+|-------|-------------|
+| `name`, `name_2` | Nombres de pila |
+| `displayName` | Nombre abreviado para display en el nodo |
+| `displaySurnames` | Apellidos para display en el nodo |
+| `dateDisplay` | Fechas formateadas con símbolos genealógicos (* †) |
+| `birth_year`, `death_year` | Años para cálculo de edad y dateDisplay |
+| `gender` | Género — determina color de barra y accentColor |
+| `is_alive` | Determina banda diagonal de fallecido en el nodo |
+| `migration_condition` | Determina el color de fondo del nodo |
+| `hasHiddenParents` | Flag para badge de vinculación |
+| `adopted` | Obsoleto — ver DECISIONS [027] |
+
+**Regla:** cualquier campo de `people` que afecte la visualización del nodo debe propagarse explícitamente en `buildFamilyGraph.js`. El motor de grafo es la única fuente de transformación válida.
+
+---
 
 - NO inferir jerarquía visual en backend
 - NO crear nodos fuera de `buildFamilyGraph.js`
